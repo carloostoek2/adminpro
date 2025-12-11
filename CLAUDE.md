@@ -379,8 +379,65 @@ bot/states/
 
 ---
 
-- **T12:** Admin Main Menu Handler
-- *T13-T17: Más handlers y features*
+#### T12: Handler /admin (Menú Principal) ✅ COMPLETADO
+**Archivo:** `bot/handlers/admin/main.py` (157 líneas) + `bot/utils/keyboards.py` (95 líneas)
+**Patrón:** Router + Middlewares + Magic Filters + InlineKeyboards
+**Responsabilidades:**
+- Crear menú principal de administración
+- Navegar entre submenús
+- Mostrar estado de configuración
+
+**Implementación:**
+```
+bot/handlers/admin/
+├── main.py              → cmd_admin, callback_admin_main, callback_admin_config
+└── __init__.py          → Export de admin_router
+
+bot/utils/
+├── keyboards.py         → Factory functions para keyboards
+└── __init__.py          → (ya existe)
+```
+
+**Keyboards Factory:**
+- `create_inline_keyboard()`: Función base para crear keyboards
+- `admin_main_menu_keyboard()`: Menú principal (3 opciones)
+- `back_to_main_menu_keyboard()`: Botón volver
+- `yes_no_keyboard()`: Confirmación Sí/No
+
+**Handlers Admin:**
+- `cmd_admin`: Handler /admin
+  * Verifica estado de configuración
+  * Muestra advertencia si faltan elementos
+  * Envía nuevo mensaje (no edita)
+
+- `callback_admin_main`: Volver al menú
+  * Callback "admin:main"
+  * Edita mensaje existente (eficiente)
+  * Maneja error "message is not modified"
+
+- `callback_admin_config`: Mostrar configuración
+  * Callback "admin:config"
+  * Usa get_config_summary() del service
+  * Edita mensaje con resumen
+
+**Router Configuration:**
+- Nombre: "admin"
+- Middlewares en orden correcto:
+  * DatabaseMiddleware (inyecta session)
+  * AdminAuthMiddleware (valida permisos)
+- Aplicados a message y callback_query
+
+**Tests Validación:** ✅ Todos pasaron
+- ✅ Keyboards: estructura y callbacks correctos
+- ✅ Router: configurado con nombre "admin"
+- ✅ Middlewares: registrados en orden
+- ✅ Handlers: importables y compilables
+- ✅ Manejo de errores de edición
+
+---
+
+- *T13: Handlers VIP y Free (Submenús)*
+- *T14-T17: Más handlers y features*
 
 ---
 
@@ -465,6 +522,17 @@ bot/states/
 └── __init__.py       → Exports de estados
 ```
 
+### Handlers (T12)
+```
+bot/handlers/admin/
+├── main.py           → cmd_admin, callback_admin_main, callback_admin_config
+└── __init__.py       → Export de admin_router
+
+bot/utils/
+├── keyboards.py      → Factory functions para inline keyboards
+└── __init__.py       → Exports (si existe)
+```
+
 ---
 
 ## 🎯 INTEGRACIÓN CON SERVICIOS
@@ -531,8 +599,20 @@ async def handle_setup_vip(message: Message, state: FSMContext):
   - [x] Exports en __init__.py
   - [x] Tests validación completos
 
-- [ ] T12: Admin Main Menu Handler
-- [ ] T13-T17: Más handlers y features
+- [x] T12: Handler /admin (Menú Principal)
+  - [x] Keyboard factory (create_inline_keyboard)
+  - [x] admin_main_menu_keyboard (3 opciones)
+  - [x] back_to_main_menu_keyboard
+  - [x] yes_no_keyboard
+  - [x] cmd_admin handler
+  - [x] callback_admin_main handler
+  - [x] callback_admin_config handler
+  - [x] Admin router configurado
+  - [x] Middlewares en orden correcto
+  - [x] Tests validación completos
 
-**Status:** 🔄 FASE 1.3 EN PROGRESO (2/3 tareas base completadas)
-**Próximo:** T12 - Admin Main Menu Handler
+- [ ] T13: Handlers VIP y Free (Submenús)
+- [ ] T14-T17: Más handlers y features
+
+**Status:** ✅ FASE 1.3 BASE COMPLETADA (3/3 tareas base)
+**Próximo:** T13 - Handlers VIP y Free (Submenús)
