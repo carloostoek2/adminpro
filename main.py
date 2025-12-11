@@ -183,6 +183,10 @@ async def main() -> None:
     # Crear dispatcher
     dp = Dispatcher(storage=storage)
 
+    # Registrar handlers ANTES de empezar el polling
+    from bot.handlers import register_all_handlers
+    register_all_handlers(dp)
+
     # Registrar callbacks de lifecycle
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
