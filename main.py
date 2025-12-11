@@ -10,6 +10,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import Config
 from bot.database import init_db, close_db
+from bot.background import start_background_tasks, stop_background_tasks
 
 # Configurar logging
 logger = logging.getLogger(__name__)
@@ -54,6 +55,9 @@ async def on_startup(bot: Bot, dispatcher: Dispatcher) -> None:
     # dispatcher.update.middleware(DatabaseMiddleware())
     # dispatcher.message.middleware(AdminAuthMiddleware())
 
+    # Iniciar background tasks
+    start_background_tasks(bot)
+
     # Notificar a admins que el bot está online
     bot_info = await bot.get_me()
     startup_message = (
@@ -94,6 +98,9 @@ async def on_shutdown(bot: Bot, dispatcher: Dispatcher) -> None:
     """
     logger.info("🛑 Cerrando bot...")
 
+    # Detener background tasks
+    stop_background_tasks()
+
     # Notificar a admins
     shutdown_message = "🛑 Bot detenido correctamente"
 
@@ -105,10 +112,6 @@ async def on_shutdown(bot: Bot, dispatcher: Dispatcher) -> None:
             )
         except Exception as e:
             logger.warning(f"⚠️ No se pudo notificar shutdown a admin {admin_id}: {e}")
-
-    # TODO: Detener background tasks (ONDA 1 - Fase 1.4)
-    # from bot.background.tasks import stop_background_tasks
-    # await stop_background_tasks()
 
     # Cerrar base de datos
     await close_db()
