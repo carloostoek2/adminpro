@@ -1256,6 +1256,53 @@ async def process_wait_time_input(
         )
 ```
 
+## 🧪 Testing
+
+El proyecto incluye suite completa de tests E2E e integración para validar funcionalidad.
+
+### Instalar Dependencias de Testing
+
+```bash
+# Instalar pytest y pytest-asyncio
+pip install pytest==7.4.3 pytest-asyncio==0.21.1 --break-system-packages
+```
+
+### Ejecutar Tests
+
+```bash
+# Todos los tests
+pytest tests/ -v
+
+# Solo tests E2E
+pytest tests/test_e2e_flows.py -v
+
+# Solo tests de integracion
+pytest tests/test_integration.py -v
+
+# Test especifico
+pytest tests/test_e2e_flows.py::test_vip_flow_complete -v
+
+# Script helper (limpia BD y ejecuta tests)
+bash scripts/run_tests.sh
+```
+
+### Tests Disponibles
+
+**End-to-End (E2E):**
+- `test_vip_flow_complete` - Flujo VIP completo (generar token → canjear → acceso)
+- `test_free_flow_complete` - Flujo Free completo (solicitar → esperar → acceso)
+- `test_vip_expiration` - Expiracion automatica de VIP
+- `test_token_validation_edge_cases` - Validacion de tokens (casos edge)
+- `test_duplicate_free_request_prevention` - Prevencion de solicitudes duplicadas
+
+**Integracion:**
+- `test_service_container_lazy_loading` - Lazy loading de servicios
+- `test_config_service_singleton` - BotConfig como singleton
+- `test_database_session_management` - Manejo de sesiones de BD
+- `test_error_handling_across_services` - Error handling entre servicios
+
+Ver `tests/README.md` para documentacion completa.
+
 ## 🔧 Desarrollo
 
 Este proyecto está en desarrollo iterativo. Consulta las tareas completadas:
