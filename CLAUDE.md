@@ -858,3 +858,113 @@ PROCESS_FREE_QUEUE_MINUTES: int = 5       # Procesamiento Free
 
 **Status:** ✅ FASE 1.4 COMPLETADA (T15)
 **Próximo:** T16 - Integración Final y Testing E2E
+
+---
+
+## ✅ CHECKLIST FASE 1.5
+
+- [x] T16: Integración Final y Testing E2E
+  - [x] conftest.py con fixtures compartidos
+  - [x] 5 tests E2E implementados y pasando
+  - [x] 4 tests integración implementados y pasando
+  - [x] event_loop fixture para tests async
+  - [x] db_setup fixture (autouse) para setup/teardown
+  - [x] mock_bot fixture con AsyncMocks
+  - [x] tests/README.md con documentación completa
+  - [x] scripts/run_tests.sh ejecutable
+  - [x] Requirements.txt actualizado (pytest, pytest-asyncio)
+  - [x] README.md con sección Testing
+  - [x] Todos los 9 tests pasando sin errores
+  - [x] Tests independientes (orden no importa)
+  - [x] BD limpia entre tests
+  - [x] Fixtures configurados correctamente
+
+---
+
+#### T16: Integración Final y Testing E2E ✅ COMPLETADO
+**Archivos:** `tests/` (estructura completa con 9 tests)
+**Patrón:** pytest + pytest-asyncio + fixtures compartidos
+**Responsabilidades:**
+- Suite de tests E2E para flujos completos
+- Tests de integración entre servicios
+- Validación de funcionalidad del bot
+
+**Implementación Tests:**
+
+**E2E Tests (5 tests):**
+1. `test_vip_flow_complete`: Flujo VIP completo
+   - Admin genera token → Usuario canjea → Acceso activo
+   - Valida: token generado, suscriptor creado, token marcado usado
+
+2. `test_free_flow_complete`: Flujo Free completo
+   - Usuario solicita → Espera tiempo configurado → Procesa cola
+   - Valida: solicitud pendiente, no procesa inmediatamente, no duplica
+
+3. `test_vip_expiration`: Expulsión automática de VIP
+   - Crear VIP expirado → Ejecutar tarea expiration → Verificar expirado
+   - Valida: is_expired() detecta, marca como expired, is_vip_active() retorna False
+
+4. `test_token_validation_edge_cases`: Validación de tokens
+   - Token no existe, usado, expirado, válido
+   - Cada caso valida retorno correcto de is_valid y mensaje claro
+
+5. `test_duplicate_free_request_prevention`: Prevención de duplicados
+   - Primera solicitud crea, segunda retorna existente (no duplica)
+
+**Integration Tests (4 tests):**
+1. `test_service_container_lazy_loading`: Lazy loading de servicios
+   - Container vacío → Acceder subscription → Se carga
+   - Verificar reutilización de instancia
+
+2. `test_config_service_singleton`: BotConfig como singleton
+   - Ambos gets retornan id=1
+   - Cambios persisten en BD
+
+3. `test_database_session_management`: Manejo de sesiones
+   - Múltiples sesiones ven cambios recíprocos
+   - Transacciones se aplican correctamente
+
+4. `test_error_handling_across_services`: Error handling robusto
+   - Token inválido rechazado
+   - Token inexistente detectado
+   - No crashes ante errores
+
+**Fixtures Compartidos (conftest.py):**
+- `event_loop`: Event loop para tests async
+- `db_setup` (autouse): Init/close BD automáticamente
+- `mock_bot`: Mock del bot de Telegram
+
+**Documentación:**
+- `tests/README.md`: Guía completa de tests y ejecución
+- `scripts/run_tests.sh`: Helper script ejecutable
+
+**Ejecución:**
+```bash
+# Instalar dependencias
+pip install pytest==7.4.3 pytest-asyncio==0.21.1 --break-system-packages
+
+# Ejecutar tests
+pytest tests/ -v
+
+# O usar script helper
+bash scripts/run_tests.sh
+```
+
+**Output Esperado:**
+```
+======================== 9 passed in 5.99s ========================
+```
+
+**Validaciones:**
+- ✅ 9 tests E2E e integración (todos pasando)
+- ✅ Fixtures funcionales (autouse, setup/teardown)
+- ✅ Mocks del bot configurados correctamente
+- ✅ Tests independientes (orden no importa)
+- ✅ BD limpia entre tests
+- ✅ Documentación completa
+- ✅ Script helper ejecutable
+
+---
+
+**Status:** ✅ FASE 1.5 COMPLETADA (T16)
+**Próximo:** T17 - Features Finales y Deployment
