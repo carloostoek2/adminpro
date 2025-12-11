@@ -753,3 +753,108 @@ Free Request:
 
 **Status:** ✅ FASE 1.3 COMPLETA (5/5 tareas handlers)
 **Próximo:** T15 - Background Tasks (Expulsión VIP, Procesamiento Free)
+
+---
+
+## ✅ CHECKLIST FASE 1.4
+
+- [x] T15: Background Tasks (Expulsión VIP + Procesamiento Free)
+  - [x] APScheduler integrado correctamente
+  - [x] expire_and_kick_vip_subscribers() implementado
+  - [x] process_free_queue() implementado
+  - [x] cleanup_old_data() implementado
+  - [x] start_background_tasks() inicia scheduler
+  - [x] stop_background_tasks() detiene scheduler gracefully
+  - [x] get_scheduler_status() retorna estado correcto
+  - [x] max_instances=1 previene ejecuciones simultáneas
+  - [x] Manejo de canales no configurados (WARNING, no crash)
+  - [x] Error handling robusto (no crashea scheduler)
+  - [x] Logging completo (INFO, WARNING, ERROR)
+  - [x] Frecuencias configurables en config.py
+  - [x] Integración en main.py (on_startup, on_shutdown)
+  - [x] 4 tests de error handling (todos pasaron)
+
+---
+
+#### T15: Background Tasks (Expulsión VIP + Procesamiento Free) ✅ COMPLETADO
+**Archivo:** `bot/background/tasks.py` (280 líneas) + `main.py` (integración)
+**Patrón:** APScheduler + AsyncIOScheduler + Error Handling
+**Responsabilidades:**
+- Expulsión automática de suscriptores VIP expirados
+- Procesamiento automático de cola Free
+- Limpieza automática de datos antiguos
+
+**Implementación Tareas:**
+- `expire_and_kick_vip_subscribers()`: Expulsa VIPs expirados cada 60 min
+- `process_free_queue()`: Procesa cola Free cada 5 min
+- `cleanup_old_data()`: Limpia datos antiguos diariamente (3 AM UTC)
+- `start_background_tasks()`: Inicia scheduler con 3 tareas
+- `stop_background_tasks()`: Detiene scheduler gracefully
+- `get_scheduler_status()`: Obtiene estado del scheduler
+
+**Configuración Scheduler:**
+- Expulsión VIP: IntervalTrigger(minutes=60)
+- Procesamiento Free: IntervalTrigger(minutes=5)
+- Limpieza: CronTrigger(hour=3, minute=0, timezone="UTC")
+- max_instances=1: Previene ejecuciones simultáneas
+- replace_existing=True: Reemplaza jobs al reiniciar
+
+**Validaciones:**
+- ✅ Canales VIP/Free no configurados (WARNING, return early)
+- ✅ Usuario bloquea bot (ERROR, continúa con siguiente)
+- ✅ Scheduler ya corre (WARNING, ignora segundo inicio)
+- ✅ Stop sin start (WARNING, manejo graceful)
+- ✅ max_instances=1 previene race conditions
+
+**Flujos Completos:**
+```
+Expulsión VIP:
+  • Busca VIPs con expiry_date <= now
+  • Marca como "expired" (status='expired')
+  • Expulsa del canal VIP
+  • Loguea resultados
+
+Procesamiento Free:
+  • Busca solicitudes con request_date + wait_time <= now
+  • Para cada solicitud:
+    - Crea invite link (24h, 1 uso)
+    - Envía link por mensaje privado
+    - Si falla: loguea ERROR, continúa siguiente
+  • Resumen: éxitos y errores
+
+Limpieza:
+  • Elimina solicitudes Free procesadas >30 días
+  • Ejecuta diariamente a las 3 AM UTC
+```
+
+**Integración main.py:**
+```python
+# on_startup: Iniciar background tasks
+start_background_tasks(bot)
+
+# on_shutdown: Detener background tasks
+stop_background_tasks()
+```
+
+**Tests Validación:** ✅ Todos pasaron (4 tests)
+- ✅ Test 1: Scheduler lifecycle (start/stop)
+- ✅ Test 2: Manejo de canales no configurados
+- ✅ Test 3: Idempotencia (start dos veces)
+- ✅ Test 4: Stop sin start
+
+**Logging:**
+- INFO: Inicio/fin de tareas, éxitos
+- WARNING: Canal no configurado, scheduler ya corre
+- ERROR: Errores en envío de mensajes, excepciones
+- DEBUG: No hay datos procesables
+
+**Configuración en config.py:**
+```python
+CLEANUP_INTERVAL_MINUTES: int = 60        # Expulsión VIP
+PROCESS_FREE_QUEUE_MINUTES: int = 5       # Procesamiento Free
+```
+
+---
+
+**Status:** ✅ FASE 1.4 COMPLETADA (T15)
+**Próximo:** T16 - Integración Final y Testing E2E
