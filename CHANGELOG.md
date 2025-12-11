@@ -66,11 +66,20 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - T13: Implementación de configuración de tiempo de espera para acceso Free con validación de entrada numérica
 - T13: Implementación de teclados inline específicos para los menús VIP y Free
 - T13: Documentación completa de los handlers VIP y Free con ejemplos de uso
+- T14: Handlers User (/start, flujos) - Handler /start con detección de rol (admin/VIP/usuario), Flujo VIP (canje de tokens VIP con validación y generación de invite links), Flujo Free (solicitud de acceso Free con tiempo de espera y notificaciones automáticas), Middleware de base de datos (inyección de sesiones sin autenticación de admin), FSM para validación de tokens (estados para manejo de entrada de tokens), Validación de configuración (verificación de canales configurados antes de procesar)
+- T14: Implementación del handler /start con detección de rol de usuario (admin, VIP, normal)
+- T14: Implementación del flujo VIP para canje de tokens con validación y generación de invite links únicos
+- T14: Implementación del flujo Free para solicitud de acceso con tiempo de espera configurable
+- T14: Aplicación de DatabaseMiddleware a handlers de usuario sin autenticación de admin
+- T14: Uso de TokenRedemptionStates para manejo de entrada de tokens VIP
+- T14: Validación de configuración de canales antes de procesar solicitudes de usuarios
+- T14: Documentación completa de los handlers User con ejemplos de uso
 
 ### Changed
 - Refactorización completa de la arquitectura de servicios para usar el contenedor
 - Optimización de consumo de memoria mediante lazy loading de servicios
 - Mejora en la estructura de gestión de suscripciones VIP y Free
+- Actualización de documentación para incluir los nuevos handlers User
 
 ### Fixed
 - Problemas de consumo de memoria en entornos con recursos limitados como Termux

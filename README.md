@@ -334,6 +334,336 @@ Handlers para la gestión de canales VIP y Free con funcionalidades completas de
 - **Configuración del canal Free:** Configuración del canal Free por reenvío de mensajes
 - **Configuración de tiempo de espera:** Configuración de tiempo de espera para acceso Free
 
+### User Handler (T14)
+Handler del comando /start que detecta el rol del usuario y proporciona flujos para canje de tokens VIP y solicitud de acceso Free:
+
+- **Handler /start:** Punto de entrada para usuarios con detección de rol (admin/VIP/usuario)
+- **Flujo VIP:** Canje de tokens VIP con validación y generación de invite links
+- **Flujo Free:** Solicitud de acceso Free con tiempo de espera y notificaciones automáticas
+- **Middleware de base de datos:** Inyección de sesiones sin autenticación de admin
+- **FSM para validación de tokens:** Estados para manejo de entrada de tokens
+- **Validación de configuración:** Verificación de canales configurados antes de procesar
+
+**Ejemplo de uso del handler User:**
+```python
+from aiogram import Router, F
+from aiogram.filters import Command
+from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from bot.middlewares import DatabaseMiddleware
+from bot.utils.keyboards import create_inline_keyboard
+from bot.services.container import ServiceContainer
+from bot.states.user import TokenRedemptionStates
+from config import Config
+
+# Router para handlers de usuario
+user_router = Router(name="user")
+
+# Aplicar middleware de database (NO AdminAuth, estos son usuarios normales)
+user_router.message.middleware(DatabaseMiddleware())
+user_router.callback_query.middleware(DatabaseMiddleware())
+
+@user_router.message(Command("start"))
+async def cmd_start(message: Message, session: AsyncSession):
+    """
+    Handler del comando /start para usuarios.
+
+    Comportamiento:
+    - Si es admin → Redirige a /admin
+    - Si es VIP activo → Muestra mensaje de bienvenida con días restantes
+    - Si no es admin → Muestra menú de usuario (VIP/Free)
+    """
+    user_id = message.from_user.id
+    user_name = message.from_user.first_name or "Usuario"
+
+    # Verificar si es admin
+    if Config.is_admin(user_id):
+        await message.answer(
+            f"👋 Hola <b>{user_name}</b>!\n\n"
+            f"Eres administrador. Usa /admin para gestionar los canales.",
+            parse_mode="HTML"
+        )
+        return
+
+    # Usuario normal: verificar si es VIP activo
+    container = ServiceContainer(session, message.bot)
+
+    is_vip = await container.subscription.is_vip_active(user_id)
+
+    if is_vip:
+        # Usuario ya tiene acceso VIP
+        subscriber = await container.subscription.get_vip_subscriber(user_id)
+
+        # Calcular días restantes
+        if subscriber and hasattr(subscriber, 'expiry_date') and subscriber.expiry_date:
+            from datetime import datetime, timezone
+            days_remaining = max(0, (subscriber.expiry_date - datetime.now(timezone.utc)).days)
+        else:
+            days_remaining = 0
+
+        await message.answer(
+            f"👋 Hola <b>{user_name}</b>!\n\n"
+            f"✅ Tienes acceso VIP activo\n"
+            f"⏱️ Días restantes: <b>{days_remaining}</b>\n\n"
+            f"Disfruta del contenido exclusivo! 🎉",
+            parse_mode="HTML"
+        )
+        return
+
+    # Usuario no es VIP: mostrar opciones
+    keyboard = create_inline_keyboard([
+        [{"text": "🎟️ Canjear Token VIP", "callback_data": "user:redeem_token"}],
+        [{"text": "📺 Solicitar Acceso Free", "callback_data": "user:request_free"}],
+    ])
+
+    await message.answer(
+        f"👋 Hola <b>{user_name}</b>!\n\n"
+        f"Bienvenido al bot de acceso a canales.\n\n"
+        f"<b>Opciones disponibles:</b>\n\n"
+        f"🎟️ <b>Canjear Token VIP</b>\n"
+        f"Si tienes un token de invitación, canjéalo para acceso VIP.\n\n"
+        f"📺 <b>Solicitar Acceso Free</b>\n"
+        f"Solicita acceso al canal gratuito (con tiempo de espera).\n\n"
+        f"👉 Selecciona una opción:",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+# Flujo de canje de token VIP
+@user_router.callback_query(F.data == "user:redeem_token")
+async def callback_redeem_token(
+    callback: CallbackQuery,
+    session: AsyncSession,
+    state: FSMContext
+):
+    """
+    Inicia el flujo de canje de token VIP.
+
+    Args:
+        callback: Callback query
+        session: Sesión de BD
+        state: FSM context
+    """
+    user_id = callback.from_user.id
+
+    # Verificar que canal VIP está configurado
+    container = ServiceContainer(session, callback.bot)
+
+    if not await container.channel.is_vip_channel_configured():
+        await callback.answer(
+            "⚠️ Canal VIP no está configurado. Contacta al administrador.",
+            show_alert=True
+        )
+        return
+
+    # Entrar en estado FSM
+    await state.set_state(TokenRedemptionStates.waiting_for_token)
+
+    try:
+        await callback.message.edit_text(
+            "🎟️ <b>Canjear Token VIP</b>\n\n"
+            "Por favor, envía tu token de invitación.\n\n"
+            "El token tiene este formato:\n"
+            "<code>A1b2C3d4E5f6G7h8</code>\n\n"
+            "👉 Copia y pega tu token aquí:",
+            reply_markup=create_inline_keyboard([
+                [{"text": "❌ Cancelar", "callback_data": "user:cancel"}]
+            ]),
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.error(f"Error editando mensaje: {e}")
+
+    await callback.answer()
+
+@user_router.message(TokenRedemptionStates.waiting_for_token)
+async def process_token_input(
+    message: Message,
+    session: AsyncSession,
+    state: FSMContext
+):
+    """
+    Procesa el token enviado por el usuario.
+
+    Valida el token, lo canjea y envía invite link.
+
+    Args:
+        message: Mensaje con el token
+        session: Sesión de BD
+        state: FSM context
+    """
+    user_id = message.from_user.id
+    token_str = message.text.strip()
+
+    container = ServiceContainer(session, message.bot)
+
+    # Intentar canjear token
+    success, msg, subscriber = await container.subscription.redeem_vip_token(
+        token_str=token_str,
+        user_id=user_id
+    )
+
+    if not success:
+        # Token inválido
+        await message.answer(
+            f"{msg}\n\n"
+            f"Verifica el token e intenta nuevamente.\n\n"
+            f"Si el problema persiste, contacta al administrador.",
+            parse_mode="HTML"
+        )
+        # Mantener estado para reintentar
+        return
+
+    # Token válido: crear invite link
+    vip_channel_id = await container.channel.get_vip_channel_id()
+
+    try:
+        invite_link = await container.subscription.create_invite_link(
+            channel_id=vip_channel_id,
+            user_id=user_id,
+            expire_hours=1  # Link expira en 1 hora
+        )
+
+        # Calcular días restantes
+        if subscriber and hasattr(subscriber, 'expiry_date') and subscriber.expiry_date:
+            from datetime import datetime, timezone
+            days_remaining = max(0, (subscriber.expiry_date - datetime.now(timezone.utc)).days)
+        else:
+            days_remaining = 0
+
+        await message.answer(
+            f"✅ <b>Token Canjeado Exitosamente!</b>\n\n"
+            f"🎉 Tu acceso VIP está activo\n"
+            f"⏱️ Duración: <b>{days_remaining} días</b>\n\n"
+            f"👇 Usa este link para unirte al canal VIP:\n"
+            f"{invite_link.invite_link}\n\n"
+            f"⚠️ <b>Importante:</b>\n"
+            f"• El link expira en 1 hora\n"
+            f"• Solo puedes usarlo 1 vez\n"
+            f"• No lo compartas con otros\n\n"
+            f"Disfruta del contenido exclusivo! 🚀",
+            parse_mode="HTML"
+        )
+
+        # Limpiar estado
+        await state.clear()
+
+    except Exception as e:
+        logger.error(f"Error creando invite link para user {user_id}: {e}", exc_info=True)
+        await message.answer(
+            "❌ Error al crear el link de invitación.\n\n"
+            "Tu token fue canjeado correctamente, pero hubo un problema técnico.\n"
+            "Contacta al administrador.",
+            parse_mode="HTML"
+        )
+        await state.clear()
+
+# Flujo de solicitud Free
+@user_router.callback_query(F.data == "user:request_free")
+async def callback_request_free(
+    callback: CallbackQuery,
+    session: AsyncSession
+):
+    """
+    Procesa solicitud de acceso al canal Free.
+
+    Crea la solicitud y notifica al usuario del tiempo de espera.
+
+    Args:
+        callback: Callback query
+        session: Sesión de BD
+    """
+    user_id = callback.from_user.id
+
+    container = ServiceContainer(session, callback.bot)
+
+    # Verificar que canal Free está configurado
+    if not await container.channel.is_free_channel_configured():
+        await callback.answer(
+            "⚠️ Canal Free no está configurado. Contacta al administrador.",
+            show_alert=True
+        )
+        return
+
+    # Verificar si ya tiene solicitud pendiente
+    existing_request = await container.subscription.get_free_request(user_id)
+
+    if existing_request:
+        # Calcular tiempo restante
+        from datetime import datetime, timezone, timedelta
+
+        wait_time_minutes = await container.config.get_wait_time()
+        time_since_request = (datetime.now(timezone.utc) - existing_request.request_date).total_seconds() / 60
+        minutes_remaining = max(0, int(wait_time_minutes - time_since_request))
+
+        try:
+            await callback.message.edit_text(
+                f"⏱️ <b>Solicitud Pendiente</b>\n\n"
+                f"Ya tienes una solicitud en proceso.\n\n"
+                f"Tiempo transcurrido: <b>{int(time_since_request)} minutos</b>\n"
+                f"Tiempo restante: <b>{minutes_remaining} minutos</b>\n\n"
+                f"Recibirás el link de acceso automáticamente cuando el tiempo se cumpla.\n\n"
+                f"💡 <i>Puedes cerrar este chat, te notificaré cuando esté listo.</i>",
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            if "message is not modified" not in str(e):
+                logger.error(f"Error editando mensaje: {e}")
+
+        await callback.answer()
+        return
+
+    # Crear nueva solicitud
+    request = await container.subscription.create_free_request(user_id)
+    wait_time = await container.config.get_wait_time()
+
+    try:
+        await callback.message.edit_text(
+            f"✅ <b>Solicitud Recibida</b>\n\n"
+            f"Tu solicitud de acceso al canal Free ha sido registrada.\n\n"
+            f"⏱️ Tiempo de espera: <b>{wait_time} minutos</b>\n\n"
+            f"📨 Recibirás un mensaje con el link de invitación cuando el tiempo se cumpla.\n\n"
+            f"💡 <i>No necesitas hacer nada más, el proceso es automático.</i>\n\n"
+            f"Puedes cerrar este chat, te notificaré cuando esté listo! 🔔",
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.error(f"Error editando mensaje: {e}")
+
+    await callback.answer("✅ Solicitud creada")
+
+# Cancelar flujo
+@user_router.callback_query(F.data == "user:cancel")
+async def callback_cancel(
+    callback: CallbackQuery,
+    state: FSMContext
+):
+    """
+    Cancela el flujo actual y limpia estado FSM.
+
+    Args:
+        callback: Callback query
+        state: FSM context
+    """
+    await state.clear()
+
+    try:
+        await callback.message.edit_text(
+            "❌ Operación cancelada.\n\n"
+            "Usa /start para volver al menú principal.",
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.error(f"Error editando mensaje: {e}")
+
+    await callback.answer()
+```
+
 **Ejemplo de uso de los handlers VIP y Free:**
 ```python
 from aiogram import Router, F
@@ -897,6 +1227,7 @@ Este proyecto está en desarrollo iterativo. Consulta las tareas completadas:
 - [x] T11: FSM States - Implementación de estados FSM para administradores y usuarios para flujos de configuración y canje de tokens
 - [x] T12: Handler /admin (Menú Principal) - Handler del comando /admin que muestra el menú principal de administración con navegación, verificación de estado de configuración y teclado inline
 - [x] T13: Handlers VIP y Free - Submenú VIP (gestión del canal VIP con generación de tokens de invitación), Configuración del canal VIP (configuración del canal VIP por reenvío de mensajes), Generación de tokens de invitación (creación de tokens VIP con duración configurable), Submenú Free (gestión del canal Free con configuración de tiempo de espera), Configuración del canal Free (configuración del canal Free por reenvío de mensajes), Configuración de tiempo de espera (configuración de tiempo de espera para acceso Free)
+- [x] T14: Handlers User (/start, flujos) - Handler /start con detección de rol (admin/VIP/usuario), Flujo VIP (canje de tokens VIP con validación y generación de invite links), Flujo Free (solicitud de acceso Free con tiempo de espera y notificaciones automáticas), Middleware de base de datos (inyección de sesiones sin autenticación de admin), FSM para validación de tokens (estados para manejo de entrada de tokens), Validación de configuración (verificación de canales configurados antes de procesar)
 - [ ] ONDA 1: MVP Funcional (T1-T17)
 - [ ] ONDA 2: Features Avanzadas (T18-T33)
 - [ ] ONDA 3: Optimización (T34-T44)

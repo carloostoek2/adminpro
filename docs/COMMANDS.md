@@ -194,21 +194,140 @@ Nuevo tiempo: 15 minutos
 Las nuevas solicitudes esperarán 15 minutos antes de procesarse.
 ```
 
-## Comandos de Usuario (Futuros)
-
-Los siguientes comandos están planeados para implementación futura:
+## Comandos de Usuario
 
 ### `/start` - Bienvenida y menú principal de usuario
-- Bienvenida al bot
-- Opciones para acceso VIP o Free
 
-### `/vip` - Canje de token VIP
-- Solicitar acceso VIP ingresando un token
-- Validación y procesamiento del token
+**Descripción:** Punto de entrada para usuarios que detecta el rol (admin/VIP/usuario) y proporciona las opciones correspondientes.
 
-### `/free` - Solicitud de acceso Free
-- Solicitar acceso al canal Free
-- Ingreso a cola con tiempo de espera
+**Permisos:** Todos los usuarios
+
+**Flujo de uso:**
+1. El usuario envía `/start`
+2. El bot detecta el rol del usuario (admin, VIP o normal)
+3. Si es admin: redirige al panel de administración
+4. Si es VIP: muestra mensaje de bienvenida con días restantes de suscripción
+5. Si es usuario normal: muestra menú con opciones VIP/Free
+
+**Opciones disponibles para usuarios normales:**
+- Canjear Token VIP: Iniciar flujo de canje de tokens VIP
+- Solicitar Acceso Free: Iniciar flujo de solicitud de acceso Free
+
+**Ejemplo:**
+```
+/start
+👋 Hola Usuario!
+
+Bienvenido al bot de acceso a canales.
+
+Opciones disponibles:
+
+🎟️ Canjear Token VIP
+Si tienes un token de invitación, canjéalo para acceso VIP.
+
+📺 Solicitar Acceso Free
+Solicita acceso al canal gratuito (con tiempo de espera).
+
+👉 Selecciona una opción:
+```
+
+### `/vip` - Canje de token VIP (Futuro)
+
+**Descripción:** Solicitar acceso VIP ingresando un token. (Funcionalidad movida al flujo de `/start`)
+
+**Permisos:** Usuarios normales
+
+**Flujo de uso:**
+1. El usuario envía `/vip`
+2. El bot solicita ingresar el token VIP
+3. El bot valida y procesa el token
+4. El bot envía link de invitación al canal VIP
+
+### `/free` - Solicitud de acceso Free (Futuro)
+
+**Descripción:** Solicitar acceso al canal Free. (Funcionalidad movida al flujo de `/start`)
+
+**Permisos:** Usuarios normales
+
+**Flujo de uso:**
+1. El usuario envía `/free`
+2. El bot registra la solicitud en la cola
+3. El bot notifica el tiempo de espera
+4. El bot envía link de invitación cuando se cumple el tiempo
+```
+
+## Flujos de Usuario
+
+### Flujo VIP - Canje de Tokens
+
+**Descripción:** Proceso para que usuarios canjeen tokens VIP y reciban acceso al canal VIP.
+
+**Flujo de uso:**
+1. Usuario selecciona "Canjear Token VIP" en el menú de `/start`
+2. Bot verifica que canal VIP esté configurado
+3. Bot entra en estado FSM `waiting_for_token`
+4. Usuario envía token de invitación
+5. Bot valida token (formato, vigencia, no usado)
+6. Bot genera invite link único para el usuario
+7. Bot envía link de acceso al canal VIP
+
+**Características del invite link:**
+- Válido por 1 hora
+- Solo puede usarse 1 vez
+- No se comparte con otros usuarios
+
+**Ejemplo de interacción:**
+```
+👉 Copia y pega tu token aquí...
+(Usuario envía: ABCD1234EFGH5678)
+✅ Token Canjeado Exitosamente!
+
+🎉 Tu acceso VIP está activo
+⏱️ Duración: 30 días
+
+👇 Usa este link para unirte al canal VIP:
+https://t.me/+abc123def456
+
+⚠️ Importante:
+• El link expira en 1 hora
+• Solo puedes usarlo 1 vez
+• No lo compartas con otros
+
+Disfruta del contenido exclusivo! 🚀
+```
+
+### Flujo Free - Solicitud de Acceso
+
+**Descripción:** Proceso para que usuarios soliciten acceso al canal Free con tiempo de espera.
+
+**Flujo de uso:**
+1. Usuario selecciona "Solicitar Acceso Free" en el menú de `/start`
+2. Bot verifica que canal Free esté configurado
+3. Bot verifica si usuario ya tiene solicitud pendiente
+4. Si no tiene solicitud: crea nueva solicitud y notifica tiempo de espera
+5. Si ya tiene solicitud: muestra tiempo restante
+6. Proceso automático procesa solicitudes cuando cumplen tiempo de espera
+7. Bot envía notificación con invite link al usuario
+
+**Características del tiempo de espera:**
+- Configurable por administrador (mínimo 1 minuto)
+- Procesamiento automático en background
+- Notificación al usuario cuando esté listo
+
+**Ejemplo de interacción:**
+```
+✅ Solicitud Recibida
+
+Tu solicitud de acceso al canal Free ha sido registrada.
+
+⏱️ Tiempo de espera: 10 minutos
+
+📨 Recibirás un mensaje con el link de invitación cuando el tiempo se cumpla.
+
+💡 No necesitas hacer nada más, el proceso es automático.
+
+Puedes cerrar este chat, te notificaré cuando esté listo! 🔔
+```
 
 ## Ejemplos de Flujos Completos
 
