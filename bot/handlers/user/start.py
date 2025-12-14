@@ -7,15 +7,18 @@ También maneja deep links para activación automática de tokens VIP.
 Deep Link Format: t.me/botname?start=TOKEN
 """
 import logging
+from datetime import datetime, timezone
+
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.middlewares import DatabaseMiddleware
-from bot.utils.keyboards import create_inline_keyboard
-from bot.services.container import ServiceContainer
 from bot.database.enums import UserRole
+from bot.middlewares import DatabaseMiddleware
+from bot.services.container import ServiceContainer
+from bot.utils.formatters import format_currency
+from bot.utils.keyboards import create_inline_keyboard
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -142,11 +145,9 @@ async def _activate_token_from_deeplink(
         # Marcar token como usado
         token.used = True
         token.used_by = user.user_id
-        from datetime import datetime
         token.used_at = datetime.utcnow()
-        await session.commit()
 
-        # Activar suscripción VIP
+        # Activar suscripción VIP (sin commit en service)
         subscriber = await container.subscription.activate_vip_subscription(
             user_id=user.user_id,
             token_id=token.id,
@@ -155,7 +156,10 @@ async def _activate_token_from_deeplink(
 
         # Actualizar rol del usuario a VIP en BD
         user.role = UserRole.VIP
+
+        # Commit único de toda la transacción
         await session.commit()
+        await session.refresh(subscriber)
 
         logger.info(
             f"✅ Usuario {user.user_id} activado como VIP vía deep link | "
@@ -182,9 +186,6 @@ async def _activate_token_from_deeplink(
             )
 
             # Formatear mensaje de éxito
-            from bot.utils.formatters import format_currency
-            from datetime import datetime, timezone
-
             # Asegurar timezone
             expiry = subscriber.expiry_date
             if expiry.tzinfo is None:
@@ -266,8 +267,6 @@ async def _send_welcome_message(
 
         # Calcular días restantes
         if subscriber and hasattr(subscriber, 'expiry_date') and subscriber.expiry_date:
-            from datetime import datetime, timezone
-
             # Asegurar que expiry_date tiene timezone
             expiry = subscriber.expiry_date
             if expiry.tzinfo is None:

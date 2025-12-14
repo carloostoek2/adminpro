@@ -80,8 +80,7 @@ class UserService:
 
             if updated:
                 user.updated_at = datetime.utcnow()
-                await self.session.commit()
-                await self.session.refresh(user)
+                # No commit - dejar que el handler maneje la transacción
                 logger.debug(f"👤 Usuario actualizado: {user.user_id}")
 
             return user
@@ -98,8 +97,7 @@ class UserService:
         )
 
         self.session.add(user)
-        await self.session.commit()
-        await self.session.refresh(user)
+        # No commit - dejar que el handler maneje la transacción
 
         logger.info(
             f"✅ Usuario creado: {user.user_id} (@{user.username}) - "
@@ -153,8 +151,7 @@ class UserService:
         user.role = new_role
         user.updated_at = datetime.utcnow()
 
-        await self.session.commit()
-        await self.session.refresh(user)
+        # No commit - dejar que el handler maneje la transacción
 
         logger.info(
             f"🔄 Rol cambiado: User {user_id} | "

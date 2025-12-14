@@ -129,8 +129,7 @@ class SubscriptionService:
         )
 
         self.session.add(token)
-        await self.session.commit()
-        await self.session.refresh(token)
+        # No commit - dejar que el handler maneje la transacción
 
         logger.info(
             f"✅ Token VIP generado: {token.token} "
@@ -236,8 +235,7 @@ class SubscriptionService:
 
             existing_subscriber.status = "active"
 
-            await self.session.commit()
-            await self.session.refresh(existing_subscriber)
+            # No commit - dejar que el handler maneje la transacción
 
             logger.info(
                 f"✅ Suscripción VIP extendida: user {user_id} "
@@ -258,8 +256,7 @@ class SubscriptionService:
         )
 
         self.session.add(subscriber)
-        await self.session.commit()
-        await self.session.refresh(subscriber)
+        # No commit - dejar que el handler maneje la transacción
 
         logger.info(
             f"✅ Nuevo suscriptor VIP: user {user_id} "
@@ -354,9 +351,7 @@ class SubscriptionService:
 
             existing_subscriber.status = "active"
 
-            await self.session.commit()
-            await self.session.refresh(existing_subscriber)
-
+            # No commit - dejar que el handler maneje la transacción
             logger.info(
                 f"✅ Suscripción VIP extendida vía deep link: user {user_id} "
                 f"(nueva expiración: {existing_subscriber.expiry_date})"
@@ -376,8 +371,7 @@ class SubscriptionService:
         )
 
         self.session.add(subscriber)
-        await self.session.commit()
-        await self.session.refresh(subscriber)
+        # No commit - dejar que el handler maneje la transacción
 
         logger.info(
             f"✅ Nuevo suscriptor VIP vía deep link: user {user_id} "

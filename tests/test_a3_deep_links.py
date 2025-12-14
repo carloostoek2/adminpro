@@ -140,6 +140,8 @@ async def test_activate_vip_from_deep_link(mock_bot):
             currency="$",
             created_by=admin_id
         )
+        await session.commit()
+        await session.refresh(plan)
 
         # Crear token vinculado
         token = await container.subscription.generate_vip_token(
@@ -147,14 +149,31 @@ async def test_activate_vip_from_deep_link(mock_bot):
             duration_hours=plan_days * 24,
             plan_id=plan.id
         )
+        await session.commit()
+        await session.refresh(token)
 
-        # Paso 2: Activar suscripción
+        # Paso 2: Activar suscripción VIP y actualizar rol (simula handler completo)
         print("  2. Activando suscripción VIP...")
+
+        # Marcar token como usado
+        token.used = True
+        token.used_by = user.user_id
+        token.used_at = datetime.utcnow()
+
+        # Activar suscripción
         subscriber = await container.subscription.activate_vip_subscription(
             user_id=user.user_id,
             token_id=token.id,
             duration_hours=plan_days * 24
         )
+
+        # Actualizar rol automáticamente (esto lo hace el handler)
+        await container.user.change_role(user.user_id, UserRole.VIP, "Token activado")
+
+        # Commit único de toda la transacción
+        await session.commit()
+        await session.refresh(subscriber)
+        await session.refresh(user)
 
         assert subscriber.user_id == user.user_id
         assert subscriber.status == "active"
@@ -167,25 +186,16 @@ async def test_activate_vip_from_deep_link(mock_bot):
         assert is_vip == True
         print("     OK: VIP activo verificado")
 
-        # Paso 4: Actualizar rol en BD
-        print("  4. Actualizando rol del usuario...")
-        user.role = UserRole.VIP
-        await session.commit()
-        await session.refresh(user)
+        # Paso 4: Verificar que el rol fue actualizado automáticamente
+        print("  4. Verificando rol automáticamente actualizado...")
         assert user.role == UserRole.VIP
-        print(f"     OK: Rol actualizado a {user.role.value}")
+        print(f"     OK: Rol automáticamente actualizado a {user.role.value}")
 
-        # Paso 5: Marcar token como usado
-        print("  5. Marcando token como usado...")
-        token.used = True
-        token.used_by = user.user_id
-        token.used_at = datetime.utcnow()
-        await session.commit()
-
-        # Validar token nuevamente
+        # Paso 5: Validar que token ya está marcado como usado
+        print("  5. Validando token usado...")
         is_valid, msg, checked_token = await container.subscription.validate_token(token.token)
         assert is_valid == False  # No es válido porque ya fue usado
-        print(f"     OK: Token marcado como usado (msg: {msg})")
+        print(f"     OK: Token ya usado (msg: {msg})")
 
 
 @pytest.mark.asyncio

@@ -9,16 +9,19 @@ Handlers para:
 - Eliminar planes
 """
 import logging
+
 from aiogram import F
-from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, Message
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from bot.database.models import InvitationToken
 from bot.handlers.admin.main import admin_router
-from bot.states.admin import PricingSetupStates
 from bot.services.container import ServiceContainer
-from bot.utils.keyboards import create_inline_keyboard
+from bot.states.admin import PricingSetupStates
 from bot.utils.formatters import format_currency
+from bot.utils.keyboards import create_inline_keyboard
 
 logger = logging.getLogger(__name__)
 
@@ -375,6 +378,15 @@ async def callback_pricing_list(
         await callback.answer("No hay tarifas configuradas", show_alert=True)
         return
 
+    # Obtener conteo de tokens eficientemente (evitar N+1)
+    token_counts = {}
+    for plan in plans:
+        result = await session.execute(
+            select(func.count(InvitationToken.id))
+            .where(InvitationToken.plan_id == plan.id)
+        )
+        token_counts[plan.id] = result.scalar() or 0
+
     # Formatear lista
     text = "📋 <b>Todas las Tarifas</b>\n\n"
 
@@ -387,7 +399,7 @@ async def callback_pricing_list(
             f"├─ Estado: {status}\n"
             f"├─ Duración: {plan.duration_days} días\n"
             f"├─ Precio: {price_str}\n"
-            f"└─ Tokens: {len(plan.tokens)}\n\n"
+            f"└─ Tokens: {token_counts[plan.id]}\n\n"
         )
 
     await callback.message.edit_text(

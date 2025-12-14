@@ -10,13 +10,14 @@ import logging
 from datetime import timedelta
 
 from aiogram import F
-from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.handlers.admin.main import admin_router
-from bot.states.admin import ChannelSetupStates
 from bot.services.container import ServiceContainer
+from bot.states.admin import ChannelSetupStates
+from bot.utils.formatters import format_currency, format_datetime
 from bot.utils.keyboards import create_inline_keyboard
 from config import Config
 
@@ -272,14 +273,12 @@ async def callback_generate_token_select_plan(
 
         # Agregar info de cada plan
         for plan in plans:
-            from bot.utils.formatters import format_currency
             price_str = format_currency(plan.price, symbol=plan.currency)
             text += f"• <b>{plan.name}</b>: {plan.duration_days} días • {price_str}\n"
 
         # Construir keyboard con botones de planes
         buttons = []
         for plan in plans:
-            from bot.utils.formatters import format_currency
             price_str = format_currency(plan.price, symbol=plan.currency)
 
             buttons.append([{
@@ -352,13 +351,15 @@ async def callback_generate_token_with_plan(
             plan_id=plan.id  # NUEVO: Vincular con plan
         )
 
+        # Commit la transacción
+        await session.commit()
+        await session.refresh(token)
+
         # GENERAR DEEP LINK
         bot_username = (await callback.bot.me()).username
         deep_link = f"https://t.me/{bot_username}?start={token.token}"
 
         # Formatear mensaje con deep link
-        from bot.utils.formatters import format_currency, format_datetime
-
         price_str = format_currency(plan.price, symbol=plan.currency)
         expiry_str = format_datetime(token.created_at + timedelta(hours=24), include_time=False)
 

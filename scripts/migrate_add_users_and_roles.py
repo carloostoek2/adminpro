@@ -14,6 +14,7 @@ import asyncio
 import logging
 import sys
 from datetime import datetime
+from sqlalchemy import text
 
 # Configurar logging
 logging.basicConfig(
@@ -48,7 +49,7 @@ async def migrate_add_users_and_roles():
         async with engine.begin() as conn:
             # Verificar tabla users
             result = await conn.execute(
-                __import__('sqlalchemy').text("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+                text("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
             )
             exists = result.scalar() is not None
 
@@ -92,6 +93,79 @@ async def migrate_add_users_and_roles():
                 logger.info("✅ Usuario admin creado (ID: 0)")
             else:
                 logger.info("✅ Usuario admin ya existe")
+
+        # Migrar usuarios existentes de VIPSubscriber
+        logger.info("📝 Migrando usuarios desde VIPSubscriber...")
+
+        async with async_session_factory() as session:
+            from bot.database.models import VIPSubscriber
+
+            # Obtener todos los VIP subscribers
+            result = await session.execute(select(VIPSubscriber))
+            vip_subscribers = result.scalars().all()
+
+            migrated_vip = 0
+            for subscriber in vip_subscribers:
+                # Verificar si usuario ya existe
+                user_result = await session.execute(
+                    select(User).where(User.user_id == subscriber.user_id)
+                )
+                existing_user = user_result.scalar_one_or_none()
+
+                if not existing_user:
+                    # Crear usuario con rol VIP si la suscripción está activa
+                    role = UserRole.VIP if subscriber.status == "active" else UserRole.FREE
+                    new_user = User(
+                        user_id=subscriber.user_id,
+                        username=None,  # No tenemos username en VIPSubscriber
+                        first_name="VIP User",  # Placeholder
+                        last_name=None,
+                        role=role,
+                        created_at=subscriber.join_date,
+                        updated_at=datetime.utcnow()
+                    )
+                    session.add(new_user)
+                    migrated_vip += 1
+                    logger.debug(f"   Migrando VIP user_id={subscriber.user_id} (rol={role.value})")
+
+            await session.commit()
+            logger.info(f"✅ Migrados {migrated_vip} usuarios VIP")
+
+        # Migrar usuarios existentes de FreeChannelRequest
+        logger.info("📝 Migrando usuarios desde FreeChannelRequest...")
+
+        async with async_session_factory() as session:
+            from bot.database.models import FreeChannelRequest
+
+            # Obtener todas las solicitudes Free
+            result = await session.execute(select(FreeChannelRequest))
+            free_requests = result.scalars().all()
+
+            migrated_free = 0
+            for request in free_requests:
+                # Verificar si usuario ya existe
+                user_result = await session.execute(
+                    select(User).where(User.user_id == request.user_id)
+                )
+                existing_user = user_result.scalar_one_or_none()
+
+                if not existing_user:
+                    # Crear usuario con rol FREE
+                    new_user = User(
+                        user_id=request.user_id,
+                        username=None,  # No tenemos username en FreeChannelRequest
+                        first_name="Free User",  # Placeholder
+                        last_name=None,
+                        role=UserRole.FREE,
+                        created_at=request.request_date,
+                        updated_at=datetime.utcnow()
+                    )
+                    session.add(new_user)
+                    migrated_free += 1
+                    logger.debug(f"   Migrando Free user_id={request.user_id}")
+
+            await session.commit()
+            logger.info(f"✅ Migrados {migrated_free} usuarios Free")
 
         await close_db()
 

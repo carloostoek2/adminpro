@@ -256,7 +256,7 @@ class VIPSubscriber(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Usuario
-    user_id = Column(BigInteger, unique=True, nullable=False, index=True)  # ID Telegram
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), unique=True, nullable=False, index=True)  # ID Telegram
 
     # Suscripción
     join_date = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -273,7 +273,7 @@ class VIPSubscriber(Base):
     token = relationship("InvitationToken", back_populates="subscribers")
 
     # Usuario (relación inversa)
-    user = relationship("User", uselist=False, lazy="selectin", primaryjoin="foreign(VIPSubscriber.user_id) == User.user_id")
+    user = relationship("User", uselist=False, lazy="selectin")
 
     # Índice compuesto para buscar activos próximos a expirar
     __table_args__ = (
@@ -308,8 +308,8 @@ class FreeChannelRequest(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Usuario
-    user_id = Column(BigInteger, nullable=False, index=True)  # ID Telegram
-    user = relationship("User", uselist=False, lazy="selectin", primaryjoin="foreign(FreeChannelRequest.user_id) == User.user_id")
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False, index=True)  # ID Telegram
+    user = relationship("User", uselist=False, lazy="selectin")
 
     # Solicitud
     request_date = Column(DateTime, default=datetime.utcnow, nullable=False)
