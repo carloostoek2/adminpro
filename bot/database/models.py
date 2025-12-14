@@ -3,6 +3,7 @@ Modelos de base de datos para el bot VIP/Free.
 
 Tablas:
 - bot_config: Configuración global del bot (singleton)
+- users: Usuarios del sistema con roles (FREE/VIP/ADMIN)
 - vip_subscribers: Suscriptores del canal VIP
 - invitation_tokens: Tokens de invitación generados
 - free_channel_requests: Solicitudes de acceso al canal Free
@@ -14,11 +15,12 @@ from typing import Optional, List
 
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime,
-    BigInteger, JSON, ForeignKey, Index, Float
+    BigInteger, JSON, ForeignKey, Index, Float, Enum
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from bot.database.base import Base
+from bot.database.enums import UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +64,77 @@ class BotConfig(Base):
         return (
             f"<BotConfig(vip={self.vip_channel_id}, "
             f"free={self.free_channel_id}, wait={self.wait_time_minutes}min)>"
+        )
+
+
+class User(Base):
+    """
+    Modelo de usuario del sistema.
+
+    Representa un usuario que ha interactuado con el bot.
+    Almacena información básica y su rol actual.
+
+    Attributes:
+        user_id: ID único de Telegram (Primary Key)
+        username: Username de Telegram (puede ser None)
+        first_name: Nombre del usuario
+        last_name: Apellido (puede ser None)
+        role: Rol actual del usuario (FREE/VIP/ADMIN)
+        created_at: Fecha de primer contacto con el bot
+        updated_at: Última actualización de datos
+
+    Relaciones:
+        vip_subscription: Suscripción VIP si existe
+        free_requests: Solicitudes al canal Free
+    """
+
+    __tablename__ = "users"
+
+    user_id = Column(BigInteger, primary_key=True)
+    username = Column(String(100), nullable=True)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=True)
+    role = Column(
+        Enum(UserRole),
+        nullable=False,
+        default=UserRole.FREE
+    )
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relaciones (se definen después en VIPSubscriber y FreeChannelRequest)
+
+    @property
+    def full_name(self) -> str:
+        """Retorna nombre completo del usuario."""
+        if self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.first_name
+
+    @property
+    def mention(self) -> str:
+        """Retorna mention HTML del usuario."""
+        return f'<a href="tg://user?id={self.user_id}">{self.full_name}</a>'
+
+    @property
+    def is_admin(self) -> bool:
+        """Verifica si el usuario es admin."""
+        return self.role == UserRole.ADMIN
+
+    @property
+    def is_vip(self) -> bool:
+        """Verifica si el usuario es VIP."""
+        return self.role == UserRole.VIP
+
+    @property
+    def is_free(self) -> bool:
+        """Verifica si el usuario es Free."""
+        return self.role == UserRole.FREE
+
+    def __repr__(self) -> str:
+        return (
+            f"<User(user_id={self.user_id}, username='{self.username}', "
+            f"role={self.role.value})>"
         )
 
 
@@ -199,6 +272,9 @@ class VIPSubscriber(Base):
     token_id = Column(Integer, ForeignKey("invitation_tokens.id"), nullable=False)
     token = relationship("InvitationToken", back_populates="subscribers")
 
+    # Usuario (relación inversa)
+    user = relationship("User", uselist=False, lazy="selectin", primaryjoin="foreign(VIPSubscriber.user_id) == User.user_id")
+
     # Índice compuesto para buscar activos próximos a expirar
     __table_args__ = (
         Index('idx_status_expiry', 'status', 'expiry_date'),
@@ -233,6 +309,7 @@ class FreeChannelRequest(Base):
 
     # Usuario
     user_id = Column(BigInteger, nullable=False, index=True)  # ID Telegram
+    user = relationship("User", uselist=False, lazy="selectin", primaryjoin="foreign(FreeChannelRequest.user_id) == User.user_id")
 
     # Solicitud
     request_date = Column(DateTime, default=datetime.utcnow, nullable=False)

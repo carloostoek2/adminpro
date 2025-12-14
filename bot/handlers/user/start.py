@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.middlewares import DatabaseMiddleware
 from bot.utils.keyboards import create_inline_keyboard
 from bot.services.container import ServiceContainer
+from bot.database.enums import UserRole
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,14 @@ async def cmd_start(message: Message, session: AsyncSession):
 
     logger.info(f"👋 Usuario {user_id} ({user_name}) ejecutó /start")
 
+    # AGREGAR: Crear/obtener usuario con rol FREE si no existe
+    container = ServiceContainer(session, message.bot)
+    user = await container.user.get_or_create_user(
+        telegram_user=message.from_user,
+        default_role=UserRole.FREE
+    )
+    logger.debug(f"👤 Usuario en sistema: {user.user_id} - Rol: {user.role.value}")
+
     # Verificar si es admin
     if Config.is_admin(user_id):
         await message.answer(
@@ -53,8 +62,6 @@ async def cmd_start(message: Message, session: AsyncSession):
         return
 
     # Usuario normal: verificar si es VIP activo
-    container = ServiceContainer(session, message.bot)
-
     is_vip = await container.subscription.is_vip_active(user_id)
 
     if is_vip:
