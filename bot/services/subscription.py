@@ -574,8 +574,7 @@ class SubscriptionService:
         """
         # Verificar si ya tiene solicitud pendiente RECIENTE (últimos 5 minutos)
         # Esto previene spam pero permite reintentos después de salir del canal
-        from datetime import timedelta
-        recent_cutoff = datetime.utcnow() - timedelta(minutes=5)
+        recent_cutoff = datetime.utcnow() - timedelta(minutes=Config.FREE_REQUEST_SPAM_WINDOW_MINUTES)
 
         result = await self.session.execute(
             select(FreeChannelRequest).where(
@@ -593,8 +592,32 @@ class SubscriptionService:
             )
             return False, "Ya existe solicitud pendiente", existing
 
-        # Limpiar TODAS las solicitudes antiguas del usuario (procesadas o no)
-        # Esto garantiza un estado limpio cuando el usuario vuelve a solicitar
+        # ESTRATEGIA DE LIMPIEZA: Eliminar TODAS las solicitudes antiguas del usuario
+        #
+        # RAZÓN: Garantizar un estado limpio cuando el usuario vuelve a solicitar.
+        # Este enfoque se implementa porque:
+        #
+        # 1. CASOS DE USO LEGÍTIMOS:
+        #    - Usuario salió del canal Free y quiere volver a entrar
+        #    - Usuario tuvo una solicitud antigua que nunca procesó
+        #    - Usuario quiere "resetear" su solicitud después de mucho tiempo
+        #
+        # 2. PREVENCIÓN DE INCONSISTENCIAS:
+        #    - Evita tener múltiples solicitudes del mismo usuario en BD
+        #    - Evita confusión sobre cuál solicitud es la "actual"
+        #    - Simplifica la lógica de procesamiento (siempre hay máximo 1 solicitud)
+        #
+        # 3. TRADE-OFFS CONSIDERADOS:
+        #    - ⚠️ RIESGO: Si falla la creación de nueva solicitud, se pierden datos antiguos
+        #    - ✅ MITIGACIÓN: La ventana anti-spam (5 min) evita pérdida de datos recientes
+        #    - ✅ BENEFICIO: Estado consistente, sin duplicados, fácil de razonar
+        #
+        # 4. ALTERNATIVAS DESCARTADAS:
+        #    - Soft delete: Aumenta complejidad sin beneficio claro
+        #    - Mantener historial: No es requerido para el caso de uso actual
+        #    - Eliminar solo después de crear: Más transacciones, más complejo
+        #
+        # CONCLUSIÓN: La limpieza total es intencional y apropiada para este caso de uso.
         delete_result = await self.session.execute(
             delete(FreeChannelRequest).where(
                 FreeChannelRequest.user_id == user_id
@@ -724,6 +747,14 @@ class SubscriptionService:
         success_count = 0
         error_count = 0
 
+        # Obtener info del canal una vez (evita N+1 queries)
+        try:
+            channel_info = await self.bot.get_chat(free_channel_id)
+            channel_name = channel_info.title or "Canal Free"
+        except Exception as e:
+            logger.warning(f"⚠️ No se pudo obtener info del canal Free: {e}")
+            channel_name = "Canal Free"
+
         # Aprobar cada solicitud usando Telegram API
         for request in ready_requests:
             try:
@@ -742,10 +773,6 @@ class SubscriptionService:
 
                 # 3. Enviar mensaje de confirmación al usuario
                 try:
-                    # Obtener info del canal para mostrar nombre
-                    channel_info = await self.bot.get_chat(free_channel_id)
-                    channel_name = channel_info.title or "Canal Free"
-
                     confirmation_message = (
                         f"🎉 <b>¡Acceso Free Aprobado!</b>\n\n"
                         f"Tu solicitud ha sido aprobada exitosamente.\n\n"
@@ -770,9 +797,16 @@ class SubscriptionService:
                     )
 
                 except Exception as notify_error:
-                    logger.warning(
-                        f"⚠️ No se pudo enviar confirmación a user {request.user_id}: {notify_error}"
-                    )
+                    # Distinguir entre usuario que bloqueó el bot vs otros errores
+                    error_type = type(notify_error).__name__
+                    if "Forbidden" in error_type or "blocked" in str(notify_error).lower():
+                        logger.warning(
+                            f"⚠️ Usuario {request.user_id} bloqueó el bot, no se envió confirmación"
+                        )
+                    else:
+                        logger.error(
+                            f"❌ Error inesperado enviando confirmación a {request.user_id}: {notify_error}"
+                        )
                     # No falla la aprobación si el mensaje no se envía
 
                 # 4. Marcar como procesada

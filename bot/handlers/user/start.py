@@ -143,10 +143,20 @@ async def _activate_token_from_deeplink(
         # Cargar plan explícitamente (sin lazy loading)
         plan = await container.pricing.get_plan_by_id(token.plan_id)
 
-        if not plan or not plan.active:
+        if not plan:
             await message.answer(
-                "❌ <b>Plan No Disponible</b>\n\n"
-                "El plan asociado a este token ya no está disponible.",
+                "❌ <b>Plan No Encontrado</b>\n\n"
+                "El plan asociado a este token ya no existe en el sistema.\n"
+                "Contacta al administrador.",
+                parse_mode="HTML"
+            )
+            return
+
+        if not plan.active:
+            await message.answer(
+                "❌ <b>Plan Desactivado</b>\n\n"
+                "El plan asociado a este token fue desactivado.\n"
+                "Contacta al administrador para más información.",
                 parse_mode="HTML"
             )
             return
