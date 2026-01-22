@@ -551,6 +551,57 @@ class SubscriptionService:
         )
         return result.scalar_one_or_none()
 
+    async def create_free_request_from_join_request(
+        self,
+        user_id: int,
+        from_chat_id: str
+    ) -> Tuple[bool, str, Optional[FreeChannelRequest]]:
+        """
+        Crea solicitud Free desde ChatJoinRequest de Telegram.
+
+        Verifica duplicados y retorna la solicitud existente o nueva.
+
+        Args:
+            user_id: ID del usuario que solicita
+            from_chat_id: ID del canal desde donde se solicita
+
+        Returns:
+            Tuple[bool, str, Optional[FreeChannelRequest]]:
+                - bool: True si nueva, False si duplicada
+                - str: Mensaje descriptivo
+                - Optional[FreeChannelRequest]: Solicitud creada o existente
+        """
+        # Verificar si ya tiene solicitud pendiente
+        result = await self.session.execute(
+            select(FreeChannelRequest).where(
+                FreeChannelRequest.user_id == user_id,
+                FreeChannelRequest.processed == False
+            ).order_by(FreeChannelRequest.request_date.desc())
+        )
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            logger.info(
+                f"ℹ️ Usuario {user_id} ya tiene solicitud Free pendiente "
+                f"(hace {existing.minutes_since_request()} min)"
+            )
+            return False, "Ya existe solicitud pendiente", existing
+
+        # Crear nueva solicitud
+        request = FreeChannelRequest(
+            user_id=user_id,
+            request_date=datetime.utcnow(),
+            processed=False
+        )
+
+        self.session.add(request)
+        await self.session.commit()
+        await self.session.refresh(request)
+
+        logger.info(f"✅ Solicitud Free creada desde ChatJoinRequest: user {user_id}")
+
+        return True, "Solicitud creada exitosamente", request
+
     async def process_free_queue(self, wait_time_minutes: int) -> List[FreeChannelRequest]:
         """
         Procesa la cola de solicitudes Free que cumplieron el tiempo de espera.
@@ -615,6 +666,75 @@ class SubscriptionService:
             logger.info(f"🗑️ {deleted_count} solicitud(es) Free antiguas eliminadas")
 
         return deleted_count
+
+    async def approve_ready_free_requests(
+        self,
+        wait_time_minutes: int,
+        free_channel_id: str
+    ) -> Tuple[int, int]:
+        """
+        Aprueba solicitudes Free que cumplieron tiempo de espera.
+
+        Usa approve_chat_join_request() de Telegram API en lugar de invite links.
+        Este es el método moderno recomendado por Telegram.
+
+        Args:
+            wait_time_minutes: Tiempo mínimo de espera requerido
+            free_channel_id: ID del canal Free
+
+        Returns:
+            Tuple[int, int]: (success_count, error_count)
+        """
+        # Calcular timestamp límite
+        cutoff_time = datetime.utcnow() - timedelta(minutes=wait_time_minutes)
+
+        # Buscar solicitudes listas para aprobar
+        result = await self.session.execute(
+            select(FreeChannelRequest).where(
+                FreeChannelRequest.processed == False,
+                FreeChannelRequest.request_date <= cutoff_time
+            ).order_by(FreeChannelRequest.request_date.asc())
+        )
+        ready_requests = result.scalars().all()
+
+        if not ready_requests:
+            logger.debug("✓ No hay solicitudes Free listas para aprobar")
+            return 0, 0
+
+        success_count = 0
+        error_count = 0
+
+        # Aprobar cada solicitud usando Telegram API
+        for request in ready_requests:
+            try:
+                # Aprobar ChatJoinRequest directamente
+                await self.bot.approve_chat_join_request(
+                    chat_id=free_channel_id,
+                    user_id=request.user_id
+                )
+
+                # Marcar como procesada
+                request.processed = True
+                request.processed_at = datetime.utcnow()
+
+                success_count += 1
+                logger.info(f"✅ Solicitud Free aprobada: user {request.user_id}")
+
+            except Exception as e:
+                error_count += 1
+                logger.error(
+                    f"❌ Error aprobando solicitud de user {request.user_id}: {e}"
+                )
+
+        # Commit todos los cambios
+        await self.session.commit()
+
+        logger.info(
+            f"📊 Procesamiento Free completado: {success_count} aprobadas, "
+            f"{error_count} errores"
+        )
+
+        return success_count, error_count
 
     # ===== INVITE LINKS =====
 
