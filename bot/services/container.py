@@ -51,6 +51,7 @@ class ServiceContainer:
         self._stats_service = None
         self._pricing_service = None
         self._user_service = None
+        self._lucien_voice_service = None
 
         logger.debug("🏭 ServiceContainer inicializado (modo lazy)")
 
@@ -168,6 +169,32 @@ class ServiceContainer:
 
         return self._user_service
 
+    # ===== LUCIEN VOICE SERVICE =====
+
+    @property
+    def message(self):
+        """
+        Servicio de mensajes con la voz de Lucien.
+
+        Se carga lazy (solo en primer acceso).
+
+        Returns:
+            LucienVoiceService: Instancia del servicio de mensajes
+
+        Usage:
+            # Generate error message
+            error_msg = container.message.common.error('al generar token')
+
+            # Generate success message
+            success_msg = container.message.common.success('canal configurado')
+        """
+        if self._lucien_voice_service is None:
+            from bot.services.message import LucienVoiceService
+            logger.debug("🔄 Lazy loading: LucienVoiceService")
+            self._lucien_voice_service = LucienVoiceService()
+
+        return self._lucien_voice_service
+
     # ===== UTILIDADES =====
 
     def get_loaded_services(self) -> list[str]:
@@ -193,6 +220,8 @@ class ServiceContainer:
             loaded.append("pricing")
         if self._user_service is not None:
             loaded.append("user")
+        if self._lucien_voice_service is not None:
+            loaded.append("message")
 
         return loaded
 
