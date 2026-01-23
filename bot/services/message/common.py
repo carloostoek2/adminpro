@@ -122,9 +122,9 @@ class CommonMessages(BaseMessageProvider):
 
         # Body
         if celebrate:
-            body = f"<i>Excelente. {action.capitalize()} ha sido completado como se esperaba.\nDiana aprobará este progreso...</i>"
+            body = f"<i>Excelente. {action} ha sido completado como se esperaba.\nDiana aprobará este progreso...</i>"
         else:
-            body = f"<i>Excelente. {action.capitalize()} ha sido completado como se esperaba.</i>"
+            body = f"<i>Excelente. {action} ha sido completado como se esperaba.</i>"
 
         # Optional detail
         if detail:
