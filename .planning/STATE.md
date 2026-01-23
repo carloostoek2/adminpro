@@ -1,7 +1,7 @@
 # Project State: LucienVoiceService
 
 **Last Updated:** 2026-01-23
-**Project Status:** Phase 2 In Progress - Handler Migration (2/3 plans complete)
+**Project Status:** Phase 2 Complete - Ready for User Flow Migration
 
 ## Project Reference
 
@@ -14,9 +14,9 @@ Migrating admin handlers to use centralized message service with voice-consisten
 ## Current Position
 
 **Phase:** 2 - Template Organization & Admin Migration
-**Plan:** 02 (AdminFree Messages) - COMPLETE
-**Status:** Phase 2 In Progress (2/3 plans complete)
-**Progress:** ██████████████████░░ 67%
+**Plan:** 03 (AdminMain Messages) - COMPLETE
+**Status:** Phase 2 Complete ✅ (3/3 plans complete)
+**Progress:** ████████████████████ 100%
 
 ### Phase Goal
 Migrate admin handlers to use navigation-based message providers (VIP, Free, Main)
@@ -28,7 +28,7 @@ Migrate admin handlers to use navigation-based message providers (VIP, Free, Mai
 - VOICE-07: Context-aware messaging ✅
 - MIGR-01: VIP handlers migrated (02-01) ✅
 - MIGR-02: Free handlers migrated (02-02) ✅
-- MIGR-03: Main handlers migrated (02-03) - PENDING
+- MIGR-03: Main handlers migrated (02-03) ✅
 - INTEG-04: Admin namespace organization ✅
 - INTEG-05: Weighted variation implementation ✅
 - INTEG-06: Formatter usage (dates, durations) ✅
@@ -38,22 +38,25 @@ Migrate admin handlers to use navigation-based message providers (VIP, Free, Mai
 2. VIP handlers use container.message.admin.vip for all UI messages ✅
 3. AdminFreeMessages provider created with "vestíbulo" voice terminology ✅
 4. Free handlers use container.message.admin.free for all UI messages ✅
-5. Weighted greeting variations (50%, 30%, 20%) in both VIP and Free menus ✅
-6. Format utilities integrated (format_currency, format_datetime, format_duration_minutes) ✅
-7. Zero hardcoded message strings in vip.py and free.py handlers ✅
+5. AdminMainMessages provider created with "sanctum/dominios de Diana" terminology ✅
+6. Main handlers use container.message.admin.main for all UI messages ✅
+7. Weighted greeting variations (50%, 30%, 20%) in all three admin providers ✅
+8. Format utilities integrated (format_currency, format_datetime, format_duration_minutes) ✅
+9. Zero hardcoded message strings in vip.py, free.py, and main.py handlers ✅
+10. Complete admin namespace exported from LucienVoiceService ✅
 
 ## Performance Metrics
 
 **Project-level:**
 - Total phases: 4
-- Phases complete: 1 (Phase 1: Foundation)
-- Requirements coverage: 28/28 (100%)
-- Overall progress: 40%
+- Phases complete: 2 (Phase 1: Foundation, Phase 2: Admin Migration)
+- Requirements coverage: 38/38 (100%)
+- Overall progress: 50%
 
 **Current phase:**
-- Plans complete: 2/3 (Phase 2 In Progress)
-- Phase progress: 67%
-- AdminVIP and AdminFree migrations complete, AdminMain pending
+- Plans complete: 3/3 (Phase 2 Complete ✅)
+- Phase progress: 100%
+- All admin providers complete: AdminMain, AdminVIP, AdminFree
 
 ## Accumulated Context
 
@@ -72,8 +75,11 @@ Migrate admin handlers to use navigation-based message providers (VIP, Free, Mai
 - **VIP Terminology:** "Círculo exclusivo" for VIP channel, "invitación" for token, "calibración" for setup (02-01)
 - **Free Terminology:** "Vestíbulo" for Free channel, "tiempo de contemplación" for wait time (02-02)
 - **Keyboard Integration:** All provider methods return (text, keyboard) tuples for complete UI (02-01, 02-02)
-- **Weighted Variations:** 50/30/20 split creates familiar-but-not-robotic experience (02-01, 02-02)
+- **Weighted Variations:** 50/30/20 split creates familiar-but-not-robotic experience (02-01, 02-02, 02-03)
 - **Validation Separation:** Technical validation errors stay in handlers, UI messaging in provider (02-02)
+- **Keyboard Factory Pattern:** Providers include private keyboard factories (_admin_main_menu_keyboard) while utils/keyboards.py keeps public versions for shared usage (02-03)
+- **Main Menu Terminology:** "Custodio/guardián" for admin, "sanctum/dominios de Diana" for main menu, "calibración del reino" for configuration (02-03)
+- **Admin Namespace Complete:** main, vip, free sub-providers all lazy-loaded and exported from LucienVoiceService (02-03)
 
 ### Current Blockers
 None
@@ -95,8 +101,13 @@ None
 - [x] Migrate VIP handlers to use message service (02-01)
 - [x] Create AdminFreeMessages provider (02-02)
 - [x] Migrate Free handlers to use message service (02-02)
-- [ ] Create AdminMainMessages provider (02-03)
-- [ ] Migrate main menu handlers to use message service (02-03)
+- [x] Create AdminMainMessages provider (02-03)
+- [x] Migrate main menu handlers to use message service (02-03)
+- [x] Update keyboard utilities with Lucien voice terminology (02-03)
+- [x] Complete admin namespace exports in LucienVoiceService (02-03)
+- [ ] Create Phase 3 execution plan for User Flow Migration
+- [ ] Create UserMessages namespace in LucienVoiceService
+- [ ] Migrate user handlers to use message service
 
 ## Session Continuity
 
@@ -111,18 +122,18 @@ Service integrated into existing ServiceContainer pattern with lazy loading. Mes
 
 ### Current Status
 - **Phase 1:** ✅ Foundation complete (BaseMessageProvider, CommonMessages, tests)
-- **Phase 2:** 🔄 In progress (2/3 plans complete)
+- **Phase 2:** ✅ Admin Migration complete (3/3 plans complete)
   - 02-01: AdminVIP - ✅ COMPLETE
   - 02-02: AdminFree - ✅ COMPLETE
-  - 02-03: AdminMain - PENDING
+  - 02-03: AdminMain - ✅ COMPLETE
 
 ### Next Step
-Phase 2 Plan 03: AdminMain Messages - Create AdminMainMessages provider for main admin menu and migrate main.py handlers to complete Phase 2.
+Phase 3: User Flow Migration - Create user message providers and migrate user handlers to complete voice consistency across all bot interactions.
 
 ---
 
 *State initialized: 2026-01-23*
-*Last session: 2026-01-23T23:08:40Z*
-*Stopped at: Completed 02-02-PLAN.md - AdminFree messages migrated successfully*
+*Last session: 2026-01-23T23:21:12Z*
+*Stopped at: Completed 02-03-PLAN.md - Phase 2 Admin Migration COMPLETE ✅*
 *Resume file: None*
-*Phase 2-02 Status: ✅ AdminFreeMessages with "vestíbulo" voice (308 lines, 7 methods), Free handlers fully migrated (9 service calls, zero hardcoded UI strings), weighted variations active, format_duration_minutes integrated*
+*Phase 2 Status: All 3 admin providers complete (AdminMain, AdminVIP, AdminFree), all admin handlers migrated (main.py, vip.py, free.py), keyboard utilities updated with Lucien voice, zero hardcoded UI strings remain, (text, keyboard) pattern validated, ready for Phase 3*
