@@ -22,7 +22,103 @@ Usage in handlers:
 from .base import BaseMessageProvider
 from .common import CommonMessages
 
-__all__ = ["BaseMessageProvider", "CommonMessages", "LucienVoiceService"]
+__all__ = ["BaseMessageProvider", "CommonMessages", "LucienVoiceService", "AdminMessages"]
+
+
+class AdminMessages:
+    """
+    Admin messages namespace for organization.
+
+    Provides access to AdminMainMessages, AdminVIPMessages, AdminFreeMessages.
+    Each submenu has its own provider organized by navigation flow.
+
+    Architecture:
+        LucienVoiceService
+            └─ admin: AdminMessages (this class)
+                ├─ main: AdminMainMessages (Phase 2 Plan 02)
+                ├─ vip: AdminVIPMessages (Phase 2 Plan 01)
+                └─ free: AdminFreeMessages (Phase 2 Plan 03)
+
+    Usage:
+        container = ServiceContainer(session, bot)
+
+        # Access VIP messages
+        text, kb = container.message.admin.vip.vip_menu(is_configured=True)
+
+        # Access main menu messages (future)
+        text, kb = container.message.admin.main.admin_menu(is_configured=True)
+
+    Stateless Design:
+        All sub-providers are lazy-loaded and stateless.
+        No session or bot stored as instance variables.
+    """
+
+    def __init__(self):
+        """
+        Initialize admin namespace with lazy-loaded sub-providers.
+
+        Sub-providers created on first access to minimize memory footprint.
+        """
+        self._main = None
+        self._vip = None
+        self._free = None
+
+    @property
+    def main(self):
+        """
+        Main admin menu messages (Phase 2 Plan 02).
+
+        Lazy-loaded: creates AdminMainMessages instance on first access.
+
+        Returns:
+            AdminMainMessages: Provider for main admin menu messages
+
+        Raises:
+            ImportError: If AdminMainMessages not yet implemented
+        """
+        if self._main is None:
+            from .admin_main import AdminMainMessages
+            self._main = AdminMainMessages()
+        return self._main
+
+    @property
+    def vip(self):
+        """
+        VIP admin messages (Phase 2 Plan 01).
+
+        Lazy-loaded: creates AdminVIPMessages instance on first access.
+
+        Returns:
+            AdminVIPMessages: Provider for VIP management messages
+
+        Examples:
+            >>> admin = AdminMessages()
+            >>> text, kb = admin.vip.vip_menu(is_configured=True)
+            >>> '🎩' in text
+            True
+        """
+        if self._vip is None:
+            from .admin_vip import AdminVIPMessages
+            self._vip = AdminVIPMessages()
+        return self._vip
+
+    @property
+    def free(self):
+        """
+        Free admin messages (Phase 2 Plan 03).
+
+        Lazy-loaded: creates AdminFreeMessages instance on first access.
+
+        Returns:
+            AdminFreeMessages: Provider for Free channel management messages
+
+        Raises:
+            ImportError: If AdminFreeMessages not yet implemented
+        """
+        if self._free is None:
+            from .admin_free import AdminFreeMessages
+            self._free = AdminFreeMessages()
+        return self._free
 
 
 class LucienVoiceService:
@@ -36,7 +132,10 @@ class LucienVoiceService:
         ServiceContainer
             └─ LucienVoiceService (this class)
                 ├─ common: CommonMessages
-                ├─ admin: AdminMessages (Phase 2)
+                ├─ admin: AdminMessages
+                │   ├─ main: AdminMainMessages
+                │   ├─ vip: AdminVIPMessages
+                │   └─ free: AdminFreeMessages
                 └─ user: UserMessages (Phase 3)
 
     Voice Consistency:
@@ -51,11 +150,14 @@ class LucienVoiceService:
     Usage:
         container = ServiceContainer(session, bot)
 
-        # Lazy-loaded: CommonMessages loads on first access
+        # Common messages
         error_msg = container.message.common.error('context')
 
-        # Reuses cached CommonMessages instance
-        success_msg = container.message.common.success('action')
+        # Admin VIP messages
+        text, kb = container.message.admin.vip.vip_menu(is_configured=True)
+
+        # Admin Free messages (future)
+        text, kb = container.message.admin.free.free_menu(is_configured=True)
     """
 
     def __init__(self):
@@ -65,6 +167,7 @@ class LucienVoiceService:
         Providers are created on first access to minimize memory footprint.
         """
         self._common = None
+        self._admin = None
 
     @property
     def common(self) -> CommonMessages:
@@ -79,3 +182,24 @@ class LucienVoiceService:
         if self._common is None:
             self._common = CommonMessages()
         return self._common
+
+    @property
+    def admin(self) -> AdminMessages:
+        """
+        Admin messages namespace.
+
+        Lazy-loaded: creates AdminMessages namespace on first access.
+        Provides access to admin.main, admin.vip, admin.free sub-providers.
+
+        Returns:
+            AdminMessages: Namespace for admin message providers
+
+        Examples:
+            >>> service = LucienVoiceService()
+            >>> text, kb = service.admin.vip.vip_menu(is_configured=True)
+            >>> '🎩' in text
+            True
+        """
+        if self._admin is None:
+            self._admin = AdminMessages()
+        return self._admin
