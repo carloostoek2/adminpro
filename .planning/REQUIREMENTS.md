@@ -9,39 +9,39 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Template Foundation
 
-- [ ] **TMPL-01**: Servicio soporta interpolación de variables (nombres, fechas, números, estados)
+- [x] **TMPL-01**: Servicio soporta interpolación de variables (nombres, fechas, números, estados) ✅ Phase 2
 - [x] **TMPL-02**: Todos los mensajes retornan HTML formateado para Telegram (bold, italic, code, links) ✅ Phase 1
 - [x] **TMPL-03**: Mensajes centralizados en servicio (cero strings hardcodeados en handlers) ✅ Phase 1
-- [ ] **TMPL-04**: Cada mensaje retorna tupla (text, keyboard) con botones integrados
+- [x] **TMPL-04**: Cada mensaje retorna tupla (text, keyboard) con botones integrados ✅ Phase 2
 - [x] **TMPL-05**: Estándares consistentes para mensajes de error y éxito ✅ Phase 1
 
 ### Voice Consistency
 
-- [ ] **VOICE-01**: Sistema de variaciones aleatorias (mínimo 2-3 versiones por mensaje clave)
-- [ ] **VOICE-02**: Variaciones ponderadas (comunes vs raras) usando random.choices
+- [x] **VOICE-01**: Sistema de variaciones aleatorias (mínimo 2-3 versiones por mensaje clave) ✅ Phase 2
+- [x] **VOICE-02**: Variaciones ponderadas (comunes vs raras) usando random.choices ✅ Phase 2
 - [x] **VOICE-03**: Tone directives integradas (reglas de voz de Lucien en código) ✅ Phase 1
 - [x] **VOICE-04**: Validación automática de anti-patrones (tutear, jerga técnica, emoji incorrecto) ✅ Phase 1
 - [x] **VOICE-05**: Cada mensaje usa emoji característico de Lucien (🎩 para él, 🌸 para Diana) ✅ Phase 1
 
 ### Dynamic Content
 
-- [ ] **DYN-01**: Bloques condicionales (contenido diferente según rol VIP/Free/Admin)
+- [x] **DYN-01**: Bloques condicionales (contenido diferente según rol VIP/Free/Admin) ✅ Phase 2
 - [ ] **DYN-02**: Renderizado de listas dinámicas (suscriptores, tokens, solicitudes)
 - [ ] **DYN-03**: Adaptación contextual (saludos varían por hora del día, frecuencia de uso)
-- [ ] **DYN-04**: Composición de templates (base + variantes) sin duplicación de código
+- [x] **DYN-04**: Composición de templates (base + variantes) sin duplicación de código ✅ Phase 2
 
 ### Integration
 
 - [x] **INTEG-01**: Servicio integrado en ServiceContainer con lazy loading ✅ Phase 1
 - [x] **INTEG-02**: Servicio es stateless (no acumula state entre llamadas) ✅ Phase 1
 - [x] **INTEG-03**: Servicio usa formatters existentes (bot/utils/formatters.py) para fechas/números ✅ Phase 1
-- [ ] **INTEG-04**: Migración de keyboards de bot/utils/keyboards.py al servicio
+- [x] **INTEG-04**: Migración de keyboards de bot/utils/keyboards.py al servicio ✅ Phase 2
 
 ### Handler Refactoring
 
-- [ ] **REFAC-01**: Migrar handlers admin/main.py (menú principal)
-- [ ] **REFAC-02**: Migrar handlers admin/vip.py (gestión VIP)
-- [ ] **REFAC-03**: Migrar handlers admin/free.py (gestión Free)
+- [x] **REFAC-01**: Migrar handlers admin/main.py (menú principal) ✅ Phase 2
+- [x] **REFAC-02**: Migrar handlers admin/vip.py (gestión VIP) ✅ Phase 2
+- [x] **REFAC-03**: Migrar handlers admin/free.py (gestión Free) ✅ Phase 2
 - [ ] **REFAC-04**: Migrar handlers user/start.py (comando /start)
 - [ ] **REFAC-05**: Migrar handlers user/vip_flow.py (canje de tokens)
 - [ ] **REFAC-06**: Migrar handlers user/free_flow.py (solicitudes Free)
