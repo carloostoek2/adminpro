@@ -14,9 +14,9 @@ Phase 4 in progress. Building session-aware message history to prevent repetitio
 ## Current Position
 
 **Phase:** 4 - Advanced Voice Features
-**Plan:** 01 (Session Message History Service) - ✅ COMPLETE
-**Status:** Phase 4 In Progress (1/3 plans complete)
-**Progress:** ███████░░░░░░░░░░░░░ 33%
+**Plan:** 03 (Message Preview CLI Tool) - ✅ COMPLETE
+**Status:** Phase 4 In Progress (3/3 plans complete)
+**Progress:** ████████████████████ 100%
 
 ### Phase Goal
 Implement context-aware variation selection and session history tracking for more natural conversations.
@@ -54,9 +54,12 @@ Implement context-aware variation selection and session history tracking for mor
 - Overall progress: 81% (Phase 4, Plan 1 complete)
 
 **Current phase:**
-- Plans complete: 1/3 (Phase 4 In Progress 🔄)
-- Phase progress: 33%
-- Completed: Session Message History Service (04-01)
+- Plans complete: 3/3 (Phase 4 COMPLETE ✅)
+- Phase progress: 100%
+- Completed:
+  - Session Message History Service (04-01)
+  - LucienVoiceService Integration (04-02)
+  - Message Preview CLI Tool (04-03)
 
 ## Accumulated Context
 
@@ -98,6 +101,8 @@ Implement context-aware variation selection and session history tracking for mor
 - **Session-Aware Variant Selection:** _choose_variant enhanced with optional user_id, method_name, session_history parameters to exclude last 2 variants (04-01)
 - **Exclusion Window of 2:** Balances repetition prevention vs variety - prevents "Buenos dias" 3x in a row while maintaining small variant set usability (04-01)
 - **In-Memory Session Storage:** No database persistence needed - session loss acceptable for convenience feature, avoids query latency (04-01)
+- **CLI Tool for Message Preview:** Standalone argparse CLI for rapid message testing without full bot startup (~500ms vs ~10s) (04-03)
+- **Subprocess Testing Pattern:** CLI tests use subprocess.run() to execute as real user would, not direct imports (04-03)
 
 ### Current Blockers
 None
@@ -137,8 +142,10 @@ None
 - [x] Implement SessionMessageHistory service (04-01)
 - [x] Enhance BaseMessageProvider._choose_variant with session context (04-01)
 - [x] Write comprehensive tests for session history (04-01)
-- [ ] Integrate SessionMessageHistory into LucienVoiceService (04-02)
-- [ ] Add session context to user-facing message methods (04-03)
+- [x] Integrate SessionMessageHistory into LucienVoiceService (04-02)
+- [x] Add session context to user-facing message methods (04-02)
+- [x] Create Message Preview CLI tool (04-03)
+- [x] Write tests for CLI preview tool (04-03)
 
 ## Session Continuity
 
@@ -162,18 +169,22 @@ Service integrated into existing ServiceContainer pattern with lazy loading. Mes
   - 03-02: UserFlowMessages - ✅ COMPLETE
   - 03-03: Testing Strategy - ✅ COMPLETE
   - 03-04: Handler Migration & Cleanup - ✅ COMPLETE
-- **Phase 4:** 🔄 In Progress (1/3 plans complete)
+- **Phase 4:** ✅ COMPLETE (3/3 plans complete)
   - 04-01: Session Message History Service - ✅ COMPLETE
-  - 04-02: LucienVoiceService Integration - NEXT
-  - 04-03: User-Facing Message Methods - PENDING
+  - 04-02: LucienVoiceService Integration - ✅ COMPLETE
+  - 04-03: Message Preview CLI Tool - ✅ COMPLETE
 
 ### Next Step
-Execute Plan 04-02: LucienVoiceService Integration - Integrate SessionMessageHistory into LucienVoiceService and ServiceContainer for automatic session tracking.
+Phase 4 COMPLETE. Ready for Phase 5 planning or project completion review.
 
 ---
 
 *State initialized: 2026-01-23*
-*Last session: 2026-01-24T13:31:00Z*
-*Stopped at: Phase 4, Plan 1 COMPLETE ✅*
+*Last session: 2026-01-24T13:48:00Z*
+*Stopped at: Phase 4, Plan 3 COMPLETE ✅*
 *Resume file: None*
-*Phase 4, Plan 1 Status: COMPLETE ✅ - SessionMessageHistory service (242 lines) with @dataclass(slots=True), deque(maxlen=5), lazy cleanup. Enhanced _choose_variant with session-aware selection (excludes last 2 variants). 18 comprehensive tests covering all functionality. Memory footprint: ~80 bytes per user (better than 200 byte target). Performance: 0.0019ms per add_entry, 0.0014ms per get_recent_variants. All 6 verification criteria passed. Ready for Plan 04-02: LucienVoiceService Integration.*
+*Phase 4 COMPLETE ✅ - All 3 plans finished:
+  - Plan 04-01: SessionMessageHistory service (242 lines) with session-aware variant selection
+  - Plan 04-02: LucienVoiceService integration with session context tracking
+  - Plan 04-03: Message Preview CLI tool (273 lines) with argparse interface
+*Phase 4 delivers context-aware messaging, session history to prevent repetition, and developer tooling for rapid message iteration.*
