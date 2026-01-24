@@ -52,6 +52,7 @@ class ServiceContainer:
         self._pricing_service = None
         self._user_service = None
         self._lucien_voice_service = None
+        self._session_history = None
 
         logger.debug("🏭 ServiceContainer inicializado (modo lazy)")
 
@@ -195,6 +196,35 @@ class ServiceContainer:
 
         return self._lucien_voice_service
 
+    # ===== SESSION HISTORY =====
+
+    @property
+    def session_history(self):
+        """
+        Servicio de historial de sesión para selección de variantes consciente del contexto.
+
+        Se carga lazy (solo en primer acceso).
+
+        Returns:
+            SessionMessageHistory: Instancia del servicio de historial
+
+        Usage:
+            # Handlers pasan user_id a message providers
+            text, kb = container.message.user.start.greeting(
+                user_name="Juan",
+                user_id=message.from_user.id,
+                is_vip=True
+            )
+            # Provider internamente llama _choose_variant con session_history
+        """
+        if self._session_history is None:
+            from bot.services.message.session_history import SessionMessageHistory
+            logger.debug("🔄 Lazy loading: SessionMessageHistory")
+            # TTL 5 minutos, máximo 5 entradas por usuario
+            self._session_history = SessionMessageHistory(ttl_seconds=300, max_entries=5)
+
+        return self._session_history
+
     # ===== UTILIDADES =====
 
     def get_loaded_services(self) -> list[str]:
@@ -222,6 +252,8 @@ class ServiceContainer:
             loaded.append("user")
         if self._lucien_voice_service is not None:
             loaded.append("message")
+        if self._session_history is not None:
+            loaded.append("session_history")
 
         return loaded
 
