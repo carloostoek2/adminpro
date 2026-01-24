@@ -122,7 +122,7 @@ The phased delivery ensures zero-downtime migration, prevents critical pitfalls 
 
 ---
 
-### Phase 4: Advanced Voice Features
+### Phase 4: Advanced Voice Features 🔄 IN PROGRESS
 **Goal:** Add context-aware variation and voice validation tools based on user feedback
 
 **Dependencies:** Phase 3 (requires user flows deployed)
@@ -135,6 +135,20 @@ The phased delivery ensures zero-downtime migration, prevents critical pitfalls 
 3. Preview mode allows testing all message variations without running bot
 4. Performance profiling confirms message generation <5ms on Termux environment
 
+**Plans:** 4 plans in 2 waves
+
+**Plan List:**
+- [x] 04-01-PLAN.md — Session Message History Service (infrastructure built) ✅
+- [x] 04-02-PLAN.md — Voice Linting Pre-Commit Hook ✅
+- [x] 04-03-PLAN.md — Message Preview CLI Tool ✅
+- [ ] 04-04-PLAN.md — Session Context Integration (gap closure) 🔄
+
+**Status Notes:**
+- Plans 04-01, 04-02, 04-03: COMPLETE ✅
+- Plan 04-04: Gap closure plan created to wire session context into message generation flow
+- Gap identified: SessionMessageHistory infrastructure exists but is not integrated into actual message generation (providers don't pass session context to _choose_variant)
+- Plan 04-04 will integrate SessionMessageHistory into ServiceContainer and modify all providers to accept user_id/session_history parameters
+
 ---
 
 ## Progress
@@ -144,12 +158,13 @@ The phased delivery ensures zero-downtime migration, prevents critical pitfalls 
 | 1 - Service Foundation | ✅ Complete | 9 requirements | 100% |
 | 2 - Template Organization | ✅ Complete | 10 requirements | 100% |
 | 3 - User Flow Migration | ✅ Complete | 9 requirements | 100% |
-| 4 - Advanced Voice Features | Pending | 0 requirements | 0% |
+| 4 - Advanced Voice Features | 🔄 In Progress | 0 requirements | 75% |
 
 **Total:** 28 v1 requirements mapped
 **Phase 1:** 9/9 requirements complete (100%)
 **Phase 2:** 10/10 requirements complete (100%)
 **Phase 3:** 9/9 requirements complete (100%)
+**Phase 4:** 3/4 plans complete (75%)
 
 ---
 
@@ -158,9 +173,9 @@ The phased delivery ensures zero-downtime migration, prevents critical pitfalls 
 ```
 Phase 1 (Foundation) ✅
     ↓
-Phase 2 (Admin) 🔄 ←→ Phase 3 (User)  [can parallelize after Phase 1]
+Phase 2 (Admin) ✅ ←→ Phase 3 (User) ✅  [can parallelize after Phase 1]
     ↓
-Phase 4 (Advanced)
+Phase 4 (Advanced) 🔄
 ```
 
 **Critical path:** Phase 1 → Phase 2 → Phase 3 → Phase 4
@@ -168,7 +183,7 @@ Phase 4 (Advanced)
 **Notes:**
 - Phases 2 and 3 can parallelize after Phase 1 completes if needed
 - Phase 4 is optional polish; core functionality complete after Phase 3
-- Research flags Phase 4 as needing deeper UX research for variation perception
+- Gap closure plan (04-04) ensures session-aware feature is fully functional
 
 ---
 
@@ -189,4 +204,6 @@ Phase 4 (Advanced)
 
 *Roadmap created: 2026-01-23*
 *Phase 1 completed: 2026-01-23*
-*Phase 2 planned: 2026-01-23*
+*Phase 2 completed: 2026-01-23*
+*Phase 3 completed: 2026-01-24*
+*Phase 4 gap closure plan created: 2026-01-24*
