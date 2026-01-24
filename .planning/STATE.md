@@ -1,7 +1,7 @@
 # Project State: LucienVoiceService
 
-**Last Updated:** 2026-01-23
-**Project Status:** Phase 2 Complete - Ready for User Flow Migration
+**Last Updated:** 2026-01-24
+**Project Status:** Phase 3 In Progress - User Flow Migration
 
 ## Project Reference
 
@@ -9,17 +9,17 @@
 Consistencia absoluta en la voz de Lucien: cada mensaje del bot debe sonar elegante, misterioso y natural viniendo del mayordomo, sin importar qué handler o flujo lo invoque.
 
 **Current Focus:**
-Migrating admin handlers to use centralized message service with voice-consistent providers for VIP, Free, and Main channels.
+Migrating user handlers to use centralized message service with voice-consistent providers for start, flows, and interactions.
 
 ## Current Position
 
-**Phase:** 2 - Template Organization & Admin Migration
-**Plan:** 03 (AdminMain Messages) - COMPLETE
-**Status:** Phase 2 Complete ✅ (3/3 plans complete)
-**Progress:** ████████████████████ 100%
+**Phase:** 3 - User Flow Migration & Testing Strategy
+**Plan:** 01 (UserStartMessages) - COMPLETE
+**Status:** Phase 3 In Progress (1/4 plans complete)
+**Progress:** █████░░░░░░░░░░░░░░░ 25%
 
 ### Phase Goal
-Migrate admin handlers to use navigation-based message providers (VIP, Free, Main)
+Migrate user handlers to use user-facing message providers (start, flows, interactions)
 
 ### Phase Requirements (10 total)
 - TMPL-04: Template composition patterns ✅
@@ -51,12 +51,12 @@ Migrate admin handlers to use navigation-based message providers (VIP, Free, Mai
 - Total phases: 4
 - Phases complete: 2 (Phase 1: Foundation, Phase 2: Admin Migration)
 - Requirements coverage: 38/38 (100%)
-- Overall progress: 50%
+- Overall progress: 50% (Phase 3 started)
 
 **Current phase:**
-- Plans complete: 3/3 (Phase 2 Complete ✅)
-- Phase progress: 100%
-- All admin providers complete: AdminMain, AdminVIP, AdminFree
+- Plans complete: 1/4 (Phase 3 In Progress)
+- Phase progress: 25%
+- Completed: UserStartMessages provider (03-01)
 
 ## Accumulated Context
 
@@ -80,6 +80,10 @@ Migrate admin handlers to use navigation-based message providers (VIP, Free, Mai
 - **Keyboard Factory Pattern:** Providers include private keyboard factories (_admin_main_menu_keyboard) while utils/keyboards.py keeps public versions for shared usage (02-03)
 - **Main Menu Terminology:** "Custodio/guardián" for admin, "sanctum/dominios de Diana" for main menu, "calibración del reino" for configuration (02-03)
 - **Admin Namespace Complete:** main, vip, free sub-providers all lazy-loaded and exported from LucienVoiceService (02-03)
+- **Time-of-Day Greetings:** Server timezone (UTC) detection with 3 periods (morning 6-12, afternoon 12-20, evening 20-6) and weighted variants (50/30/20) (03-01)
+- **Role-Based Adaptation:** Single greeting() method handles admin/VIP/free cases with appropriate messaging and keyboards (03-01)
+- **Deep Link Distinction:** Celebratory messaging for deep link activation intentionally different from manual redemption for UX clarity (03-01)
+- **Error Type Categorization:** 4 error types (invalid, used, expired, no_plan) with polite but clear explanations (03-01)
 
 ### Current Blockers
 None
@@ -105,9 +109,11 @@ None
 - [x] Migrate main menu handlers to use message service (02-03)
 - [x] Update keyboard utilities with Lucien voice terminology (02-03)
 - [x] Complete admin namespace exports in LucienVoiceService (02-03)
-- [ ] Create Phase 3 execution plan for User Flow Migration
-- [ ] Create UserMessages namespace in LucienVoiceService
-- [ ] Migrate user handlers to use message service
+- [x] Create Phase 3 execution plan for User Flow Migration
+- [x] Create UserStartMessages provider (03-01)
+- [x] Export user_start from LucienVoiceService (03-01)
+- [ ] Create UserFlowMessages provider (03-02)
+- [ ] Migrate user handlers to use message service (03-03, 03-04)
 
 ## Session Continuity
 
@@ -126,14 +132,19 @@ Service integrated into existing ServiceContainer pattern with lazy loading. Mes
   - 02-01: AdminVIP - ✅ COMPLETE
   - 02-02: AdminFree - ✅ COMPLETE
   - 02-03: AdminMain - ✅ COMPLETE
+- **Phase 3:** 🔄 User Flow Migration in progress (1/4 plans complete)
+  - 03-01: UserStartMessages - ✅ COMPLETE
+  - 03-02: UserFlowMessages - ⏳ PENDING
+  - 03-03: User Handlers Migration - ⏳ PENDING
+  - 03-04: Testing Strategy - ⏳ PENDING
 
 ### Next Step
-Phase 3: User Flow Migration - Create user message providers and migrate user handlers to complete voice consistency across all bot interactions.
+Plan 03-02: UserFlowMessages provider - Create message provider for Free channel requests and VIP token redemption flows.
 
 ---
 
 *State initialized: 2026-01-23*
-*Last session: 2026-01-23T23:21:12Z*
-*Stopped at: Completed 02-03-PLAN.md - Phase 2 Admin Migration COMPLETE ✅*
+*Last session: 2026-01-24T06:04:28Z*
+*Stopped at: Completed 03-01-PLAN.md - UserStartMessages provider COMPLETE ✅*
 *Resume file: None*
-*Phase 2 Status: All 3 admin providers complete (AdminMain, AdminVIP, AdminFree), all admin handlers migrated (main.py, vip.py, free.py), keyboard utilities updated with Lucien voice, zero hardcoded UI strings remain, (text, keyboard) pattern validated, ready for Phase 3*
+*Phase 3 Status: UserStartMessages provider created with time-of-day greetings (3 periods), role-based adaptation (admin/VIP/free), deep link celebration messaging, and 4 error types. Exported from LucienVoiceService with lazy loading. Ready for 03-02: UserFlowMessages provider.*
