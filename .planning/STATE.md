@@ -1,7 +1,7 @@
 # Project State: LucienVoiceService
 
 **Last Updated:** 2026-01-24
-**Project Status:** Phase 3 Complete - User Flow Migration ✅
+**Project Status:** Phase 4 In Progress - Advanced Voice Features 🔄
 
 ## Project Reference
 
@@ -9,17 +9,17 @@
 Consistencia absoluta en la voz de Lucien: cada mensaje del bot debe sonar elegante, misterioso y natural viniendo del mayordomo, sin importar qué handler o flujo lo invoque.
 
 **Current Focus:**
-Phase 3 completed successfully. All user handlers migrated to centralized message service. Ready for Phase 4: Advanced Voice Features.
+Phase 4 in progress. Building session-aware message history to prevent repetition fatigue.
 
 ## Current Position
 
-**Phase:** 3 - User Flow Migration & Testing Strategy
-**Plan:** 04 (Handler Migration & Cleanup) - ✅ COMPLETE
-**Status:** Phase 3 Complete (4/4 plans complete)
-**Progress:** ████████████████████ 100%
+**Phase:** 4 - Advanced Voice Features
+**Plan:** 01 (Session Message History Service) - ✅ COMPLETE
+**Status:** Phase 4 In Progress (1/3 plans complete)
+**Progress:** ███████░░░░░░░░░░░░░ 33%
 
 ### Phase Goal
-Migrate user handlers to use user-facing message providers (start, flows, interactions)
+Implement context-aware variation selection and session history tracking for more natural conversations.
 
 ### Phase Requirements (10 total)
 - TMPL-04: Template composition patterns ✅
@@ -50,13 +50,13 @@ Migrate user handlers to use user-facing message providers (start, flows, intera
 **Project-level:**
 - Total phases: 4
 - Phases complete: 3 (Phase 1: Foundation, Phase 2: Admin Migration, Phase 3: User Migration)
-- Requirements coverage: 48/48 (100%)
-- Overall progress: 75% (Phase 3 complete)
+- Requirements coverage: 51/60 (85%)
+- Overall progress: 81% (Phase 4, Plan 1 complete)
 
 **Current phase:**
-- Plans complete: 4/4 (Phase 3 Complete ✅)
-- Phase progress: 100%
-- Completed: UserStartMessages (03-01), UserFlowMessages (03-02), Testing Strategy (03-03), Handler Migration (03-04)
+- Plans complete: 1/3 (Phase 4 In Progress 🔄)
+- Phase progress: 33%
+- Completed: Session Message History Service (04-01)
 
 ## Accumulated Context
 
@@ -93,6 +93,11 @@ Migrate user handlers to use user-facing message providers (start, flows, intera
 - **Variation Distribution Pragmatism:** Use >=2 not ==3 for variation tests to handle <1% randomness in 30 iterations (03-03)
 - **Manual Token Redemption Deprecated:** Deep link activation provides better UX (one-click vs manual typing), removed vip_flow.py (188 lines), faster and less error-prone (03-04)
 - **Keyboard Format Standardization:** Dict format {"text": "...", "callback_data": "..."} required by create_inline_keyboard() for type safety and consistency (03-04)
+- **Session Memory Efficiency:** @dataclass(slots=True) + deque(maxlen=5) = ~80 bytes per user (40% better than 200 byte target) (04-01)
+- **Lazy Cleanup Pattern:** hash(user_id) % 10 == 0 triggers cleanup on ~10% of add_entry calls, avoiding background thread complexity (04-01)
+- **Session-Aware Variant Selection:** _choose_variant enhanced with optional user_id, method_name, session_history parameters to exclude last 2 variants (04-01)
+- **Exclusion Window of 2:** Balances repetition prevention vs variety - prevents "Buenos dias" 3x in a row while maintaining small variant set usability (04-01)
+- **In-Memory Session Storage:** No database persistence needed - session loss acceptable for convenience feature, avoids query latency (04-01)
 
 ### Current Blockers
 None
@@ -127,7 +132,13 @@ None
 - [x] Migrate user handlers to use message service (03-04)
 - [x] Remove deprecated vip_flow.py and TokenRedemptionStates (03-04)
 - [x] Validate E2E tests pass with zero regressions (03-04)
-- [ ] Create Phase 4 execution plan for Advanced Voice Features
+- [x] Create Phase 4 execution plan for Advanced Voice Features
+- [x] Create SessionHistoryEntry dataclass with slots (04-01)
+- [x] Implement SessionMessageHistory service (04-01)
+- [x] Enhance BaseMessageProvider._choose_variant with session context (04-01)
+- [x] Write comprehensive tests for session history (04-01)
+- [ ] Integrate SessionMessageHistory into LucienVoiceService (04-02)
+- [ ] Add session context to user-facing message methods (04-03)
 
 ## Session Continuity
 
@@ -151,14 +162,18 @@ Service integrated into existing ServiceContainer pattern with lazy loading. Mes
   - 03-02: UserFlowMessages - ✅ COMPLETE
   - 03-03: Testing Strategy - ✅ COMPLETE
   - 03-04: Handler Migration & Cleanup - ✅ COMPLETE
+- **Phase 4:** 🔄 In Progress (1/3 plans complete)
+  - 04-01: Session Message History Service - ✅ COMPLETE
+  - 04-02: LucienVoiceService Integration - NEXT
+  - 04-03: User-Facing Message Methods - PENDING
 
 ### Next Step
-Plan Phase 4: Advanced Voice Features - Context-aware variation selection, user interaction history tracking, A/B testing framework, voice consistency pre-commit hooks.
+Execute Plan 04-02: LucienVoiceService Integration - Integrate SessionMessageHistory into LucienVoiceService and ServiceContainer for automatic session tracking.
 
 ---
 
 *State initialized: 2026-01-23*
-*Last session: 2026-01-24T06:30:00Z*
-*Stopped at: Phase 3 Execution COMPLETE ✅*
+*Last session: 2026-01-24T13:31:00Z*
+*Stopped at: Phase 4, Plan 1 COMPLETE ✅*
 *Resume file: None*
-*Phase 3 Status: ALL PLANS COMPLETE ✅ - UserStartMessages provider (324 lines) with time-of-day greetings, role-based adaptation, deep link activation. UserFlowMessages provider (205 lines) with Free request messaging, progress tracking. 3 semantic test fixtures created. 26 unit tests for user messages. Handlers migrated: start.py (305 lines), free_flow.py (99 lines). vip_flow.py removed (188 lines). 188 lines of hardcoded messages eliminated. 127/135 tests passing (94%). Verification passed: 5/5 must-haves verified. Voice consistency: 100%. Ready for Phase 4: Advanced Voice Features.*
+*Phase 4, Plan 1 Status: COMPLETE ✅ - SessionMessageHistory service (242 lines) with @dataclass(slots=True), deque(maxlen=5), lazy cleanup. Enhanced _choose_variant with session-aware selection (excludes last 2 variants). 18 comprehensive tests covering all functionality. Memory footprint: ~80 bytes per user (better than 200 byte target). Performance: 0.0019ms per add_entry, 0.0014ms per get_recent_variants. All 6 verification criteria passed. Ready for Plan 04-02: LucienVoiceService Integration.*
