@@ -14,10 +14,10 @@ from datetime import datetime
 from typing import Tuple, Optional
 
 from aiogram.types import InlineKeyboardMarkup
-from aiogram.utils.markdown import escape_html
 
 from bot.services.message.base import BaseMessageProvider
 from bot.utils.keyboards import create_inline_keyboard
+from bot.utils.formatters import escape_html
 
 
 class UserStartMessages(BaseMessageProvider):
