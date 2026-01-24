@@ -112,19 +112,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | MENU-01 | Phase 5 | Pending |
 | MENU-02 | Phase 5 | Pending |
-| MENU-03 | Phase 8 | Pending |
+| MENU-03 | Phase 9 | Pending |
 | MENU-04 | Phase 5 | Pending |
 | VOICE-01 | Phase 6 | Pending |
 | VOICE-02 | Phase 6 | Pending |
-| VOICE-03 | Phase 9 | Pending |
-| VOICE-04 | Phase 9 | Pending |
-| VOICE-05 | Phase 9 | Pending |
+| VOICE-03 | Phase 10 | Pending |
+| VOICE-04 | Phase 10 | Pending |
+| VOICE-05 | Phase 10 | Pending |
 | VOICE-06 | Phase 6 | Pending |
 | NAV-01 | Phase 7 | Pending |
 | NAV-02 | Phase 7 | Pending |
 | NAV-03 | Phase 7 | Pending |
-| NAV-04 | Phase 7 | Pending |
-| NAV-05 | Phase 7 | Pending |
+| NAV-04 | Phase 6 | Pending |
+| NAV-05 | Phase 6 | Pending |
 | VIPMENU-01 | Phase 6 | Pending |
 | VIPMENU-02 | Phase 6 | Pending |
 | VIPMENU-03 | Phase 6 | Pending |
@@ -134,43 +134,43 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FREEMENU-03 | Phase 6 | Pending |
 | FREEMENU-04 | Phase 6 | Pending |
 | FREEMENU-05 | Phase 6 | Pending |
-| CONTENT-01 | Phase 10 | Pending |
-| CONTENT-02 | Phase 10 | Pending |
-| CONTENT-03 | Phase 10 | Pending |
-| CONTENT-04 | Phase 11 | Pending |
-| CONTENT-05 | Phase 11 | Pending |
-| CONTENT-06 | Phase 11 | Pending |
-| CONTENT-07 | Phase 10 | Pending |
-| INTEREST-01 | Phase 10 | Pending |
-| INTEREST-02 | Phase 10 | Pending |
-| INTEREST-03 | Phase 10 | Pending |
-| INTEREST-04 | Phase 10 | Pending |
-| INTEREST-05 | Phase 10 | Pending |
-| ADMIN-USR-01 | Phase 8 | Pending |
-| ADMIN-USR-02 | Phase 8 | Pending |
-| ADMIN-USR-03 | Phase 8 | Pending |
-| ADMIN-USR-04 | Phase 8 | Pending |
-| ADMIN-USR-05 | Phase 8 | Pending |
+| CONTENT-01 | Phase 5 | Pending |
+| CONTENT-02 | Phase 5 | Pending |
+| CONTENT-03 | Phase 5 | Pending |
+| CONTENT-04 | Phase 7 | Pending |
+| CONTENT-05 | Phase 7 | Pending |
+| CONTENT-06 | Phase 7 | Pending |
+| CONTENT-07 | Phase 6 | Pending |
+| INTEREST-01 | Phase 8 | Pending |
+| INTEREST-02 | Phase 8 | Pending |
+| INTEREST-03 | Phase 8 | Pending |
+| INTEREST-04 | Phase 8 | Pending |
+| INTEREST-05 | Phase 8 | Pending |
+| ADMIN-USR-01 | Phase 9 | Pending |
+| ADMIN-USR-02 | Phase 9 | Pending |
+| ADMIN-USR-03 | Phase 9 | Pending |
+| ADMIN-USR-04 | Phase 9 | Pending |
+| ADMIN-USR-05 | Phase 9 | Pending |
 | ADMIN-INT-01 | Phase 8 | Pending |
 | ADMIN-INT-02 | Phase 8 | Pending |
 | ADMIN-INT-03 | Phase 8 | Pending |
 | ADMIN-INT-04 | Phase 8 | Pending |
 | ADMIN-INT-05 | Phase 8 | Pending |
-| ADMIN-CONTENT-01 | Phase 11 | Pending |
-| ADMIN-CONTENT-02 | Phase 11 | Pending |
-| ADMIN-CONTENT-03 | Phase 11 | Pending |
-| ADMIN-CONTENT-04 | Phase 11 | Pending |
-| ADMIN-CONTENT-05 | Phase 11 | Pending |
-| FLOW-FREE-01 | Phase 9 | Pending |
-| FLOW-FREE-02 | Phase 9 | Pending |
-| FLOW-FREE-03 | Phase 9 | Pending |
-| FLOW-FREE-04 | Phase 9 | Pending |
-| FLOW-FREE-05 | Phase 9 | Pending |
-| FLOW-FREE-06 | Phase 9 | Pending |
-| DOCS-01 | Phase 12 | Pending |
-| DOCS-02 | Phase 12 | Pending |
-| DOCS-03 | Phase 12 | Pending |
-| DOCS-04 | Phase 12 | Pending |
+| ADMIN-CONTENT-01 | Phase 7 | Pending |
+| ADMIN-CONTENT-02 | Phase 7 | Pending |
+| ADMIN-CONTENT-03 | Phase 7 | Pending |
+| ADMIN-CONTENT-04 | Phase 7 | Pending |
+| ADMIN-CONTENT-05 | Phase 7 | Pending |
+| FLOW-FREE-01 | Phase 10 | Pending |
+| FLOW-FREE-02 | Phase 10 | Pending |
+| FLOW-FREE-03 | Phase 10 | Pending |
+| FLOW-FREE-04 | Phase 10 | Pending |
+| FLOW-FREE-05 | Phase 10 | Pending |
+| FLOW-FREE-06 | Phase 10 | Pending |
+| DOCS-01 | Phase 11 | Pending |
+| DOCS-02 | Phase 11 | Pending |
+| DOCS-03 | Phase 11 | Pending |
+| DOCS-04 | Phase 11 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 60 total
@@ -189,4 +189,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-24 after initial definition*
+*Last updated: 2026-01-24 after roadmap creation*

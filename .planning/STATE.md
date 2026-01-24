@@ -1,69 +1,78 @@
-# Project State: Sistema de Menús
-
-**Last Updated:** 2026-01-24
-**Project Status:** v1.1 MILESTONE IN PROGRESS
+# Project State
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-01-24)
 
-**Core value:**
-Cada usuario recibe una experiencia de menú personalizada según su rol (Admin/VIP/Free), con la voz consistente de Lucien y opciones relevantes a su contexto.
-
-**Current focus:** Defining requirements for v1.1 - Sistema de Menús
+**Core value:** Cada usuario recibe una experiencia de menú personalizada según su rol (Admin/VIP/Free), con la voz consistente de Lucien y opciones relevantes a su contexto.
+**Current focus:** Phase 5 - Role Detection & Database Foundation
 
 ## Current Position
 
-**Phase:** Not started (defining requirements)
-**Plan:** —
-**Status:** Defining requirements
-**Progress:** ░░░░░░░░░░░░░░░░░░░░░ 0%
-**Last activity:** 2026-01-24 — v1.1 milestone initiated
+Phase: 5 of 11 (Role Detection & Database Foundation)
+Plan: TBD in current phase
+Status: Ready to plan
+Last activity: 2026-01-24 — Roadmap created for v1.1 milestone
+
+Progress: ░░░░░░░░░░ 0% (v1.1 milestone)
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 14 (v1.0)
+- Average duration: ~20 min
+- Total execution time: ~4.7 hours
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 1 | 3 | ~60 min | ~20 min |
+| 2 | 3 | ~60 min | ~20 min |
+| 3 | 4 | ~80 min | ~20 min |
+| 4 | 4 | ~80 min | ~20 min |
+
+**Recent Trend:**
+- Last 5 plans: ~20 min each
+- Trend: Stable
+
+*Updated after v1.0 completion*
 
 ## Accumulated Context
 
-### Key Decisions Made (v1.0)
+### Decisions
 
-All decisions documented with outcomes in PROJECT.md. Key outcomes:
-- Stateless architecture prevents memory leaks
-- AST-based voice linting achieves 5.09ms performance
-- Session-aware variation selection with ~80 bytes/user overhead
-- Manual token redemption deprecated in favor of deep link activation
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
 
-### Current Blockers
-None
+- [v1.0]: Stateless architecture with session context passed as parameters instead of stored in __init__
+- [v1.0]: Session-aware variation selection with ~80 bytes/user memory overhead
+- [v1.0]: AST-based voice linting for consistency enforcement (5.09ms performance)
+- [v1.1]: Role-based routing with separate Router instances per role (Admin/VIP/Free)
+- [v1.1]: FSM state hierarchy limited to 3 levels to avoid state soup
+- [v1.1]: ServiceContainer extension with .menu property for lazy loading
 
-### Open Questions
-None for v1.0
+### Pending Todos
 
-### TODOs
-All v1.0 TODOs completed:
-- [x] Phase 1: Service Foundation (3 plans)
-- [x] Phase 2: Admin Migration (3 plans)
-- [x] Phase 3: User Flow Migration (4 plans)
-- [x] Phase 4: Advanced Voice Features (4 plans)
+None yet.
+
+### Blockers/Concerns
+
+**From research flags:**
+
+- **Phase 6 (VIP/Free User Menus):** Role detection logic needs validation for edge cases around role changes during active menu session (VIP expired but not yet kicked from channel).
+- **Phase 8 (Interest Notification System):** Admin notification UX needs validation - optimal batching interval (5 min, 10 min, 30 min) and how many admins is "too many" for real-time.
+- **Phase 9 (User Management Features):** Permission model needs clarification - can admins modify other admins? Can admins block themselves?
+
+**Gaps to resolve during planning:**
+
+1. Content package types: How many types needed? (vip, free, admin, custom?) Affects database schema.
+2. Interest notification urgency: Real-time vs batched? Admin preferences to validate.
+3. User management permissions: Self-protection rules and admin privilege levels to define.
+4. Social media links: Static config or database-stored for Free channel entry flow.
 
 ## Session Continuity
 
-### What We Built
-
-A centralized message service (LucienVoiceService) that maintains Lucien's sophisticated mayordomo personality consistently across all bot interactions.
-
-### Status
-
-**v1.0 DELIVERED:**
-- 7 message providers
-- 5 handler files migrated
-- ~330 lines of hardcoded strings eliminated
-- 140/140 tests passing
-- 28/28 requirements satisfied
-
-### Next Step
-
-Define roadmap phases for v1.1 - Sistema de Menús (60 requirements across 12 categories)
-
----
-
-*State initialized: 2026-01-23*
-*v1.0 milestone complete: 2026-01-24*
-*v1.1 milestone initiated: 2026-01-24*
+Last session: 2026-01-24
+Stopped at: Roadmap created for v1.1 milestone "Sistema de Menús" with 7 phases (5-11) covering 60 requirements
+Resume file: None
