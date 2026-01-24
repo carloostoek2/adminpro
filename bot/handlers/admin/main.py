@@ -44,9 +44,12 @@ async def cmd_admin(message: Message, session: AsyncSession):
     config_status = await container.config.get_config_status()
 
     # Obtener mensaje del provider
+    session_history = container.session_history
     text, keyboard = container.message.admin.main.admin_menu_greeting(
         is_configured=config_status["is_configured"],
-        missing_items=config_status.get("missing", [])
+        missing_items=config_status.get("missing", []),
+        user_id=message.from_user.id,
+        session_history=session_history
     )
 
     await message.answer(
@@ -77,9 +80,12 @@ async def callback_admin_main(callback: CallbackQuery, session: AsyncSession):
     config_status = await container.config.get_config_status()
 
     # Obtener mensaje del provider
+    session_history = container.session_history
     text, keyboard = container.message.admin.main.admin_menu_greeting(
         is_configured=config_status["is_configured"],
-        missing_items=config_status.get("missing", [])
+        missing_items=config_status.get("missing", []),
+        user_id=callback.from_user.id,
+        session_history=session_history
     )
 
     # Editar mensaje existente (no enviar nuevo)

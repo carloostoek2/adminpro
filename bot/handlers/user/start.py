@@ -67,11 +67,14 @@ async def cmd_start(message: Message, session: AsyncSession):
 
     if is_admin:
         # Redirect admin to /admin using message provider
+        session_history = container.session_history
         text, _ = container.message.user.start.greeting(
             user_name=user_name,
+            user_id=user_id,
             is_admin=True,
             is_vip=False,
-            vip_days_remaining=0
+            vip_days_remaining=0,
+            session_history=session_history
         )
         await message.answer(text, parse_mode="HTML")
         return
@@ -220,13 +223,16 @@ async def _activate_token_from_deeplink(
             price_str = format_currency(plan.price, symbol=plan.currency)
 
             # Use provider for success message
+            session_history = container.session_history
             success_text, keyboard = container.message.user.start.deep_link_activation_success(
                 user_name=user_name,
                 plan_name=plan.name,
                 duration_days=plan.duration_days,
                 price=price_str,
                 days_remaining=days_remaining,
-                invite_link=invite_link.invite_link
+                invite_link=invite_link.invite_link,
+                user_id=user.user_id,
+                session_history=session_history
             )
 
             await message.answer(
@@ -290,11 +296,14 @@ async def _send_welcome_message(
             vip_days_remaining = max(0, (expiry - now).days)
 
     # Use provider for greeting (handles admin/VIP/free automatically)
+    session_history = container.session_history
     text, keyboard = container.message.user.start.greeting(
         user_name=user_name,
+        user_id=user_id,
         is_admin=False,  # Already filtered admins above
         is_vip=is_vip,
-        vip_days_remaining=vip_days_remaining
+        vip_days_remaining=vip_days_remaining,
+        session_history=session_history
     )
 
     await message.answer(

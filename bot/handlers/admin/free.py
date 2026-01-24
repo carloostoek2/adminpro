@@ -44,14 +44,22 @@ async def callback_free_menu(callback: CallbackQuery, session: AsyncSession):
         channel_name = channel_info.title if channel_info else "Canal Free"
 
         # Get message from provider
+        session_history = container.session_history
         text, keyboard = container.message.admin.free.free_menu(
             is_configured=True,
             channel_name=channel_name,
-            wait_time_minutes=wait_time
+            wait_time_minutes=wait_time,
+            user_id=callback.from_user.id,
+            session_history=session_history
         )
     else:
         # Get message from provider
-        text, keyboard = container.message.admin.free.free_menu(is_configured=False)
+        session_history = container.session_history
+        text, keyboard = container.message.admin.free.free_menu(
+            is_configured=False,
+            user_id=callback.from_user.id,
+            session_history=session_history
+        )
 
     try:
         await callback.message.edit_text(

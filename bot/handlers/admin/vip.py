@@ -60,10 +60,13 @@ async def callback_vip_menu(callback: CallbackQuery, session: AsyncSession):
             subscriber_count = 0
 
     # Generate message and keyboard from provider
+    session_history = container.session_history
     text, keyboard = container.message.admin.vip.vip_menu(
         is_configured=is_configured,
         channel_name=channel_name,
-        subscriber_count=subscriber_count
+        subscriber_count=subscriber_count,
+        user_id=callback.from_user.id,
+        session_history=session_history
     )
 
     try:
