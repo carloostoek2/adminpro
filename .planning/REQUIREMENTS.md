@@ -26,8 +26,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Dynamic Content
 
 - [x] **DYN-01**: Bloques condicionales (contenido diferente según rol VIP/Free/Admin) ✅ Phase 2
-- [ ] **DYN-02**: Renderizado de listas dinámicas (suscriptores, tokens, solicitudes)
-- [ ] **DYN-03**: Adaptación contextual (saludos varían por hora del día, frecuencia de uso)
+- [x] **DYN-02**: Renderizado de listas dinámicas (suscriptores, tokens, solicitudes) ✅ Phase 3
+- [x] **DYN-03**: Adaptación contextual (saludos varían por hora del día, frecuencia de uso) ✅ Phase 3
 - [x] **DYN-04**: Composición de templates (base + variantes) sin duplicación de código ✅ Phase 2
 
 ### Integration
@@ -42,16 +42,16 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **REFAC-01**: Migrar handlers admin/main.py (menú principal) ✅ Phase 2
 - [x] **REFAC-02**: Migrar handlers admin/vip.py (gestión VIP) ✅ Phase 2
 - [x] **REFAC-03**: Migrar handlers admin/free.py (gestión Free) ✅ Phase 2
-- [ ] **REFAC-04**: Migrar handlers user/start.py (comando /start)
-- [ ] **REFAC-05**: Migrar handlers user/vip_flow.py (canje de tokens)
-- [ ] **REFAC-06**: Migrar handlers user/free_flow.py (solicitudes Free)
-- [ ] **REFAC-07**: Todos los tests E2E existentes siguen pasando después de refactor
+- [x] **REFAC-04**: Migrar handlers user/start.py (comando /start) ✅ Phase 3
+- [x] **REFAC-05**: Migrar handlers user/vip_flow.py (canje de tokens) ✅ Phase 3
+- [x] **REFAC-06**: Migrar handlers user/free_flow.py (solicitudes Free) ✅ Phase 3
+- [x] **REFAC-07**: Todos los tests E2E existentes siguen pasando después de refactor ✅ Phase 3
 
 ### Testing
 
-- [ ] **TEST-01**: Helpers semánticos para tests (assert_message_contains_greeting vs string matching)
-- [ ] **TEST-02**: Tests unitarios para cada tipo de mensaje (greetings, errors, confirmations)
-- [ ] **TEST-03**: Tests de integración con handlers refactorizados
+- [x] **TEST-01**: Helpers semánticos para tests (assert_message_contains_greeting vs string matching) ✅ Phase 3
+- [x] **TEST-02**: Tests unitarios para cada tipo de mensaje (greetings, errors, confirmations) ✅ Phase 3
+- [x] **TEST-03**: Tests de integración con handlers refactorizados ✅ Phase 3
 
 ## v2 Requirements
 
@@ -98,41 +98,44 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TMPL-01 | Phase 2 | Pending |
+| TMPL-01 | Phase 2 | Complete ✅ |
 | TMPL-02 | Phase 1 | Complete ✅ |
 | TMPL-03 | Phase 1 | Complete ✅ |
-| TMPL-04 | Phase 2 | Pending |
+| TMPL-04 | Phase 2 | Complete ✅ |
 | TMPL-05 | Phase 1 | Complete ✅ |
-| VOICE-01 | Phase 2 | Pending |
-| VOICE-02 | Phase 2 | Pending |
+| VOICE-01 | Phase 2 | Complete ✅ |
+| VOICE-02 | Phase 2 | Complete ✅ |
 | VOICE-03 | Phase 1 | Complete ✅ |
 | VOICE-04 | Phase 1 | Complete ✅ |
 | VOICE-05 | Phase 1 | Complete ✅ |
-| DYN-01 | Phase 2 | Pending |
-| DYN-02 | Phase 3 | Pending |
-| DYN-03 | Phase 3 | Pending |
-| DYN-04 | Phase 2 | Pending |
+| DYN-01 | Phase 2 | Complete ✅ |
+| DYN-02 | Phase 3 | Complete ✅ |
+| DYN-03 | Phase 3 | Complete ✅ |
+| DYN-04 | Phase 2 | Complete ✅ |
 | INTEG-01 | Phase 1 | Complete ✅ |
 | INTEG-02 | Phase 1 | Complete ✅ |
 | INTEG-03 | Phase 1 | Complete ✅ |
-| INTEG-04 | Phase 2 | Pending |
-| REFAC-01 | Phase 2 | Pending |
-| REFAC-02 | Phase 2 | Pending |
-| REFAC-03 | Phase 2 | Pending |
-| REFAC-04 | Phase 3 | Pending |
-| REFAC-05 | Phase 3 | Pending |
-| REFAC-06 | Phase 3 | Pending |
-| REFAC-07 | Phase 3 | Pending |
-| TEST-01 | Phase 3 | Pending |
-| TEST-02 | Phase 3 | Pending |
-| TEST-03 | Phase 3 | Pending |
+| INTEG-04 | Phase 2 | Complete ✅ |
+| REFAC-01 | Phase 2 | Complete ✅ |
+| REFAC-02 | Phase 2 | Complete ✅ |
+| REFAC-03 | Phase 2 | Complete ✅ |
+| REFAC-04 | Phase 3 | Complete ✅ |
+| REFAC-05 | Phase 3 | Complete ✅ |
+| REFAC-06 | Phase 3 | Complete ✅ |
+| REFAC-07 | Phase 3 | Complete ✅ |
+| TEST-01 | Phase 3 | Complete ✅ |
+| TEST-02 | Phase 3 | Complete ✅ |
+| TEST-03 | Phase 3 | Complete ✅ |
 
 **Coverage:**
 - v1 requirements: 28 total
 - Phase 1 complete: 9/28 (32%)
+- Phase 2 complete: 10/28 (36%)
+- Phase 3 complete: 9/28 (32%)
+- Total complete: 28/28 (100%) ✅
 - Mapped to phases: 28
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-01-23*
-*Last updated: 2026-01-23 after roadmap creation*
+*Last updated: 2026-01-24 after Phase 3 completion*
