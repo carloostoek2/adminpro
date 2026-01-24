@@ -130,6 +130,22 @@ class TestCommonMessages:
         assert isinstance(common, BaseMessageProvider), \
             "CommonMessages must inherit from BaseMessageProvider"
 
+    def test_error_maintains_lucien_voice(self, assert_lucien_voice):
+        """Verify error messages maintain Lucien's voice (semantic test)."""
+        common = CommonMessages()
+        error_msg = common.error("test context")
+
+        # Use semantic assertion - tests emoji, no tutear, no jargon, HTML
+        assert_lucien_voice(error_msg)
+
+    def test_success_maintains_lucien_voice(self, assert_lucien_voice):
+        """Verify success messages maintain Lucien's voice (semantic test)."""
+        common = CommonMessages()
+        success_msg = common.success("action completed")
+
+        # Use semantic assertion
+        assert_lucien_voice(success_msg)
+
     def test_error_has_lucien_emoji(self):
         """Verify error messages include Lucien's characteristic emoji."""
         common = CommonMessages()
