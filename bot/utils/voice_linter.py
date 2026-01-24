@@ -73,7 +73,8 @@ class VoiceViolationChecker(ast.NodeVisitor):
                 })
 
         # Check 3: Missing emoji in multi-line strings
-        if "\\n" in string and LUCIEN_EMOJI not in string:
+        # Check for actual newline characters OR escaped \n in source
+        if ("\n" in string or "\\n" in string) and LUCIEN_EMOJI not in string:
             self.violations.append({
                 "line": lineno,
                 "type": "missing_emoji",
