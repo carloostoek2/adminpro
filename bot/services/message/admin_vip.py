@@ -43,7 +43,9 @@ class AdminVIPMessages(BaseMessageProvider):
         self,
         is_configured: bool,
         channel_name: str = "Canal VIP",
-        subscriber_count: int = 0
+        subscriber_count: int = 0,
+        user_id: Optional[int] = None,
+        session_history: Optional["SessionMessageHistory"] = None
     ) -> Tuple[str, InlineKeyboardMarkup]:
         """
         Generate VIP menu message with weighted greeting variations.
@@ -52,6 +54,8 @@ class AdminVIPMessages(BaseMessageProvider):
             is_configured: Whether VIP channel is configured
             channel_name: Name of VIP channel (if configured)
             subscriber_count: Number of active VIP subscribers
+            user_id: Optional Telegram user ID for session-aware selection
+            session_history: Optional SessionMessageHistory for context awareness
 
         Returns:
             Tuple of (text, keyboard) for VIP management menu
@@ -83,7 +87,10 @@ class AdminVIPMessages(BaseMessageProvider):
         ]
         header_greeting = self._choose_variant(
             [g[0] for g in greetings],
-            weights=[g[1] for g in greetings]
+            weights=[g[1] for g in greetings],
+            user_id=user_id,
+            method_name="vip_menu",
+            session_history=session_history
         )
 
         # Header with Lucien emoji
