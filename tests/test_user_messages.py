@@ -34,7 +34,7 @@ class TestUserStartMessages:
 
             service = LucienVoiceService()
             text, keyboard = service.user.start.greeting(
-                first_name="Juan",
+                user_name="Juan",
                 is_admin=False,
                 is_vip=False
             )
@@ -46,7 +46,7 @@ class TestUserStartMessages:
         """Test admin greeting redirects to /admin without keyboard."""
         service = LucienVoiceService()
         text, keyboard = service.user.start.greeting(
-            first_name="Admin",
+            user_name="Admin",
             is_admin=True,
             is_vip=False
         )
@@ -61,7 +61,7 @@ class TestUserStartMessages:
         """Test VIP greeting shows days remaining."""
         service = LucienVoiceService()
         text, keyboard = service.user.start.greeting(
-            first_name="VIPUser",
+            user_name="VIPUser",
             is_admin=False,
             is_vip=True,
             vip_days_remaining=15
@@ -82,7 +82,7 @@ class TestUserStartMessages:
         """Test free user greeting has options keyboard."""
         service = LucienVoiceService()
         text, keyboard = service.user.start.greeting(
-            first_name="FreeUser",
+            user_name="FreeUser",
             is_admin=False,
             is_vip=False
         )
@@ -111,7 +111,7 @@ class TestUserStartMessages:
         greetings = []
         for _ in range(30):
             text, _ = service.user.start.greeting(
-                first_name="Test",
+                user_name="Test",
                 is_admin=False,
                 is_vip=False
             )
@@ -130,8 +130,11 @@ class TestUserStartMessages:
         """Test deep link activation success has celebratory tone."""
         service = LucienVoiceService()
         text, keyboard = service.user.start.deep_link_activation_success(
+            user_name="Pedro",
             plan_name="Plan Mensual",
-            expiry_date="2026-02-24 06:00",
+            duration_days=30,
+            price="$9.99",
+            days_remaining=30,
             invite_link="https://t.me/+ABC123"
         )
 
@@ -144,18 +147,20 @@ class TestUserStartMessages:
         # Must show plan details
         assert "Plan Mensual" in text or "mensual" in text_lower
 
-        # Must show expiry date
-        assert "2026-02-24" in text or "24" in text
-
-        # Must show invite link
-        assert "https://t.me/+ABC123" in text
+        # Must show duration
+        assert "30" in text  # duration_days
 
         # Should have keyboard to join channel
         assert keyboard is not None
 
+        # Keyboard should have URL button (link is in button, not text)
+        assert len(keyboard.inline_keyboard) > 0
+        button = keyboard.inline_keyboard[0][0]
+        assert button.url == "https://t.me/+ABC123"
+
     @pytest.mark.parametrize("error_type,expected_keywords", [
-        ("invalid", ["inválido", "válido"]),
-        ("used", ["usado", "utilizado"]),
+        ("invalid", ["válida", "válido", "inválido"]),
+        ("used", ["utilizada", "usado", "utilizado"]),
         ("expired", ["expirado", "caducado", "vencido"]),
         ("no_plan", ["plan", "disponible"])
     ])
@@ -172,13 +177,14 @@ class TestUserStartMessages:
 
     @pytest.mark.parametrize("method_name,kwargs", [
         ("greeting", {
-            "first_name": "Test",
-            "is_admin": False,
-            "is_vip": False
+            "user_name": "Test"
         }),
         ("deep_link_activation_success", {
+            "user_name": "Test",
             "plan_name": "Plan Test",
-            "expiry_date": "2026-02-24 06:00",
+            "duration_days": 30,
+            "price": "$9.99",
+            "days_remaining": 30,
             "invite_link": "https://t.me/+TEST"
         }),
         ("deep_link_activation_error", {
@@ -246,8 +252,8 @@ class TestUserFlowMessages:
         """Test duplicate request shows elapsed and remaining time."""
         service = LucienVoiceService()
         text = service.user.flows.free_request_duplicate(
-            elapsed_minutes=15,
-            remaining_minutes=10
+            time_elapsed_minutes=15,
+            time_remaining_minutes=10
         )
 
         # Must show elapsed time
@@ -265,8 +271,8 @@ class TestUserFlowMessages:
         """Test duplicate request is polite and reassuring (not scolding)."""
         service = LucienVoiceService()
         text = service.user.flows.free_request_duplicate(
-            elapsed_minutes=15,
-            remaining_minutes=10
+            time_elapsed_minutes=15,
+            time_remaining_minutes=10
         )
 
         # Should NOT scold or be harsh
@@ -301,8 +307,8 @@ class TestUserFlowMessages:
             "wait_time_minutes": 30
         }),
         ("free_request_duplicate", {
-            "elapsed_minutes": 15,
-            "remaining_minutes": 10
+            "time_elapsed_minutes": 15,
+            "time_remaining_minutes": 10
         }),
         ("free_request_error", {
             "error_type": "channel_not_configured"
