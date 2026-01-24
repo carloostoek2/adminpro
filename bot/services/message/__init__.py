@@ -26,6 +26,7 @@ from .common import CommonMessages
 from .admin_main import AdminMainMessages
 from .admin_vip import AdminVIPMessages
 from .admin_free import AdminFreeMessages
+from .user_start import UserStartMessages
 
 __all__ = [
     "BaseMessageProvider",
@@ -35,6 +36,7 @@ __all__ = [
     "AdminMainMessages",
     "AdminVIPMessages",
     "AdminFreeMessages",
+    "UserStartMessages",
 ]
 
 
@@ -158,7 +160,7 @@ class LucienVoiceService:
                 │   ├─ main: AdminMainMessages ✅
                 │   ├─ vip: AdminVIPMessages ✅
                 │   └─ free: AdminFreeMessages ✅
-                └─ user: UserMessages (Phase 3 - Future)
+                └─ user_start: UserStartMessages ✅ PHASE 3 PLAN 01
 
     Voice Consistency:
         All providers inherit from BaseMessageProvider which enforces Lucien's voice.
@@ -183,6 +185,9 @@ class LucienVoiceService:
 
         # Admin Free messages
         text, kb = container.message.admin.free.free_menu(is_configured=True)
+
+        # User start messages
+        text, kb = container.message.user_start.greeting("Juan", is_vip=True, vip_days_remaining=15)
     """
 
     def __init__(self):
@@ -193,6 +198,7 @@ class LucienVoiceService:
         """
         self._common = None
         self._admin = None
+        self._user_start = None
 
     @property
     def common(self) -> CommonMessages:
@@ -228,3 +234,26 @@ class LucienVoiceService:
         if self._admin is None:
             self._admin = AdminMessages()
         return self._admin
+
+    @property
+    def user_start(self) -> UserStartMessages:
+        """
+        User start messages provider (Phase 3 Plan 01) ✅ COMPLETE.
+
+        Lazy-loaded: creates UserStartMessages instance on first access.
+        Provides time-of-day greetings, role-based adaptation, and deep link handling.
+
+        Returns:
+            UserStartMessages: Provider for /start command messages
+
+        Examples:
+            >>> service = LucienVoiceService()
+            >>> text, kb = service.user_start.greeting("María", is_vip=True, vip_days_remaining=15)
+            >>> '🎩' in text and 'María' in text
+            True
+            >>> kb is None  # VIP users don't get action keyboard
+            True
+        """
+        if self._user_start is None:
+            self._user_start = UserStartMessages()
+        return self._user_start
