@@ -1,24 +1,24 @@
-# Project State: LucienVoiceService
+# Project State: Sistema de Menús
 
 **Last Updated:** 2026-01-24
-**Project Status:** v1.0 MILESTONE COMPLETE
+**Project Status:** v1.1 MILESTONE IN PROGRESS
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:**
-Consistencia absoluta en la voz de Lucien: cada mensaje del bot debe sonar elegante, misterioso y natural viniendo del mayordomo, sin importar que handler o flujo lo invoque.
+Cada usuario recibe una experiencia de menú personalizada según su rol (Admin/VIP/Free), con la voz consistente de Lucien y opciones relevantes a su contexto.
 
-**Current focus:** Planning next milestone - run `/gsd:new-milestone` to begin
+**Current focus:** Defining requirements for v1.1 - Sistema de Menús
 
 ## Current Position
 
-**Phase:** v1.0 COMPLETE
-**Plan:** All 14 plans executed
-**Status:** MILESTONE SHIPPED
-**Progress:** ████████████████████ 100%
-**Last activity:** 2026-01-24 — v1.0 milestone complete
+**Phase:** Not started (defining requirements)
+**Plan:** —
+**Status:** Defining requirements
+**Progress:** ░░░░░░░░░░░░░░░░░░░░░ 0%
+**Last activity:** 2026-01-24 — v1.1 milestone initiated
 
 ## Accumulated Context
 
@@ -60,10 +60,10 @@ A centralized message service (LucienVoiceService) that maintains Lucien's sophi
 
 ### Next Step
 
-Run `/gsd:new-milestone` to define v2 goals (Voice audit dashboard, A/B testing framework, Internationalization, Gamification messages, etc.)
+Define roadmap phases for v1.1 - Sistema de Menús (60 requirements across 12 categories)
 
 ---
 
 *State initialized: 2026-01-23*
 *v1.0 milestone complete: 2026-01-24*
-*Next milestone: TBD*
+*v1.1 milestone initiated: 2026-01-24*
