@@ -47,22 +47,19 @@ class MenuRouter:
         # /menu command - main entry point
         self.router.message.register(self._route_to_menu, Command("menu"))
 
-    async def _route_to_menu(self, message: Message, **kwargs):
+    async def _route_to_menu(self, message: Message, data: Dict[str, Any]):
         """
         Handler principal que enruta a menú basado en rol.
 
         Args:
             message: Mensaje de Telegram
-            **kwargs: Data del handler (incluye user_role y container inyectados por middlewares)
+            data: Data del handler (incluye user_role y container inyectados por middlewares)
 
         Flujo:
             1. Obtener user_role de data (inyectado por RoleDetectionMiddleware)
             2. Redirigir a handler apropiado según rol
             3. Fallback a menú Free si rol no detectado
         """
-        # En Aiogram 3, los middlewares inyectan datos en kwargs['data']
-        # Si estamos dentro del contexto de middlewares, data estará disponible
-        data = kwargs.get("data", {})
         user_role = data.get("user_role")
 
         if user_role is None:
@@ -71,22 +68,20 @@ class MenuRouter:
 
         # Routing basado en rol
         if user_role == UserRole.ADMIN:
-            await self._show_admin_menu(message, **kwargs)
+            await self._show_admin_menu(message, data)
         elif user_role == UserRole.VIP:
-            await self._show_vip_menu(message, **kwargs)
+            await self._show_vip_menu(message, data)
         else:  # FREE o cualquier otro
-            await self._show_free_menu(message, **kwargs)
+            await self._show_free_menu(message, data)
 
-    async def _show_admin_menu(self, message: Message, **kwargs):
+    async def _show_admin_menu(self, message: Message, data: Dict[str, Any]):
         """
         Muestra menú de administrador.
 
         Args:
             message: Mensaje de Telegram
-            **kwargs: Data del handler (incluye container, session, etc.)
+            data: Data del handler (incluye container, session, etc.)
         """
-        # Extraer data de kwargs para compatibilidad con los handlers existentes
-        data = kwargs.get("data", {})
         try:
             from bot.handlers.admin.menu import show_admin_menu
             await show_admin_menu(message, data)
@@ -99,16 +94,14 @@ class MenuRouter:
                 parse_mode="Markdown"
             )
 
-    async def _show_vip_menu(self, message: Message, **kwargs):
+    async def _show_vip_menu(self, message: Message, data: Dict[str, Any]):
         """
         Muestra menú VIP.
 
         Args:
             message: Mensaje de Telegram
-            **kwargs: Data del handler (incluye container, session, etc.)
+            data: Data del handler (incluye container, session, etc.)
         """
-        # Extraer data de kwargs para compatibilidad con los handlers existentes
-        data = kwargs.get("data", {})
         try:
             from bot.handlers.vip.menu import show_vip_menu
             await show_vip_menu(message, data)
@@ -121,16 +114,14 @@ class MenuRouter:
                 parse_mode="Markdown"
             )
 
-    async def _show_free_menu(self, message: Message, **kwargs):
+    async def _show_free_menu(self, message: Message, data: Dict[str, Any]):
         """
         Muestra menú Free.
 
         Args:
             message: Mensaje de Telegram
-            **kwargs: Data del handler (incluye container, session, etc.)
+            data: Data del handler (incluye container, session, etc.)
         """
-        # Extraer data de kwargs para compatibilidad con los handlers existentes
-        data = kwargs.get("data", {})
         try:
             from bot.handlers.free.menu import show_free_menu
             await show_free_menu(message, data)
