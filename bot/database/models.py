@@ -9,6 +9,8 @@ Tablas:
 - free_channel_requests: Solicitudes de acceso al canal Free
 - subscription_plans: Planes de suscripción/tarifas configurables
 - content_packages: Paquetes de contenido (FREE/VIP/PREMIUM)
+- user_interests: Intereses de usuario en paquetes de contenido
+- user_role_change_log: Auditoría de cambios de rol
 """
 import logging
 from datetime import datetime
@@ -16,7 +18,7 @@ from typing import Optional, List
 
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime,
-    BigInteger, JSON, ForeignKey, Index, Float, Enum, Numeric
+    BigInteger, JSON, ForeignKey, Index, Float, Enum, Numeric, desc
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
@@ -104,6 +106,8 @@ class User(Base):
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relaciones (se definen después en VIPSubscriber y FreeChannelRequest)
+    # interests relationship added in UserInterest model (back_populates)
+    interests = relationship("UserInterest", back_populates="user", cascade="all, delete-orphan")
 
     @property
     def full_name(self) -> str:
@@ -335,6 +339,125 @@ class FreeChannelRequest(Base):
     def __repr__(self):
         status = "PROCESADA" if self.processed else f"PENDIENTE ({self.minutes_since_request()}min)"
         return f"<FreeRequest(user={self.user_id}, {status})>"
+
+
+class UserInterest(Base):
+    """
+    Registro de interés de usuario en un paquete de contenido.
+
+    Registra cuando un usuario marca "Me interesa" en un paquete.
+    Implementa deduplicación: si el usuario ya marcó interés, se actualiza created_at.
+
+    Attributes:
+        id: ID único del registro (Primary Key)
+        user_id: ID del usuario (Foreign Key to users)
+        package_id: ID del paquete (Foreign Key to content_packages)
+        is_attended: Si el admin ya atendió este interés
+        attended_at: Fecha en que el admin marcó como atendido
+        created_at: Fecha de creación (actualizado en re-clicks)
+
+    Relaciones:
+        user: Usuario que marcó interés
+        package: Paquete de interés
+    """
+
+    __tablename__ = "user_interests"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Keys (with foreign keys)
+    user_id = Column(
+        BigInteger,
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    package_id = Column(
+        Integer,
+        ForeignKey("content_packages.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    # State
+    is_attended = Column(Boolean, nullable=False, default=False, index=True)
+    attended_at = Column(DateTime, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="interests")
+    package = relationship("ContentPackage", back_populates="interests")
+
+    def __repr__(self):
+        return (
+            f"<UserInterest(id={self.id}, user_id={self.user_id}, "
+            f"package_id={self.package_id}, is_attended={self.is_attended})>"
+        )
+
+    # Unique constraint for deduplication + composite index for queries
+    __table_args__ = (
+        # Unique constraint: one interest per user-package pair
+        Index('idx_interest_user_package', 'user_id', 'package_id', unique=True),
+        # Composite index for "attended interests by user" queries
+        Index('idx_interest_user_package_attended', 'user_id', 'package_id', 'is_attended'),
+    )
+
+
+class UserRoleChangeLog(Base):
+    """
+    Registro de auditoría para cambios de rol de usuario.
+
+    Registra todos los cambios de rol con razón y metadata.
+    Permite auditar quién hizo qué cambio y por qué.
+
+    Attributes:
+        id: ID único del registro (Primary Key)
+        user_id: ID del usuario que cambió de rol
+        previous_role: Rol anterior del usuario (None para nuevos usuarios)
+        new_role: Nuevo rol del usuario
+        changed_by: ID del admin que hizo el cambio (or SYSTEM for automatic)
+        reason: Razón del cambio (RoleChangeReason enum)
+        change_source: Origen del cambio (ADMIN_PANEL, SYSTEM, API)
+        metadata: Información adicional JSON (opcional)
+        changed_at: Fecha y hora del cambio
+    """
+
+    __tablename__ = "user_role_change_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # User
+    user_id = Column(BigInteger, nullable=False, index=True)
+
+    # Role change
+    previous_role = Column(Enum("bot.database.enums.UserRole"), nullable=True)  # None for new users
+    new_role = Column(Enum("bot.database.enums.UserRole"), nullable=False)
+
+    # Metadata
+    changed_by = Column(BigInteger, nullable=False, index=True)  # Admin ID or 0 for SYSTEM
+    reason = Column(Enum("bot.database.enums.RoleChangeReason"), nullable=False)
+    change_source = Column(String(50), nullable=False)  # 'ADMIN_PANEL', 'SYSTEM', 'API'
+    change_metadata = Column(JSON, nullable=True)  # Optional: {"duration_hours": 24, "token": "ABC..."}
+
+    # Timestamp
+    changed_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+    def __repr__(self):
+        return (
+            f"<UserRoleChangeLog(id={self.id}, user_id={self.user_id}, "
+            f"previous_role={self.previous_role if self.previous_role else None}, "
+            f"new_role={self.new_role}, reason={self.reason})>"
+        )
+
+    # Indexes for audit trail queries
+    __table_args__ = (
+        # Composite index for "user's role history" queries (most recent first)
+        Index('idx_role_log_user_changed_at', 'user_id', 'changed_at'),
+        # Composite index for "changes made by admin" queries
+        Index('idx_role_log_changed_by_changed_at', 'changed_by', 'changed_at'),
+    )
 
 
 class ContentPackage(Base):
