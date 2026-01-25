@@ -54,6 +54,7 @@ class ServiceContainer:
         self._lucien_voice_service = None
         self._session_history = None
         self._role_detection_service = None
+        self._content_service = None
 
         logger.debug("🏭 ServiceContainer inicializado (modo lazy)")
 
@@ -245,6 +246,25 @@ class ServiceContainer:
 
         return self._role_detection_service
 
+    # ===== CONTENT SERVICE =====
+
+    @property
+    def content(self):
+        """
+        Service de gestión de paquetes de contenido.
+
+        Se carga lazy (solo en primer acceso).
+
+        Returns:
+            ContentService: Instancia del service
+        """
+        if self._content_service is None:
+            from bot.services.content import ContentService
+            logger.debug("🔄 Lazy loading: ContentService")
+            self._content_service = ContentService(self._session)
+
+        return self._content_service
+
     # ===== UTILIDADES =====
 
     def get_loaded_services(self) -> list[str]:
@@ -276,6 +296,8 @@ class ServiceContainer:
             loaded.append("session_history")
         if self._role_detection_service is not None:
             loaded.append("role_detection")
+        if self._content_service is not None:
+            loaded.append("content")
 
         return loaded
 
