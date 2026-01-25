@@ -1,9 +1,14 @@
 """
 Keyboard Factory - Generador de teclados inline.
 
-Centraliza la creación de keyboards para consistencia visual.
+Funciones:
+- create_inline_keyboard: Crea teclado a partir de estructura de botones
+- create_menu_navigation: Crea filas de navegación estándar (Volver/Salir)
+- create_content_with_navigation: Combina contenido con navegación
+
+Centraliza la creación de keyboards para consistencia visual y navegación.
 """
-from typing import List
+from typing import List, Optional
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
@@ -159,3 +164,87 @@ def config_menu_keyboard() -> InlineKeyboardMarkup:
         [{"text": "📺 Reacciones del Vestíbulo", "callback_data": "config:reactions:free"}],
         [{"text": "🔙 Volver al Menú Principal", "callback_data": "admin:main"}],
     ])
+
+
+def create_menu_navigation(
+    include_back: bool = True,
+    include_exit: bool = True,
+    back_text: str = "⬅️ Volver",
+    exit_text: str = "🚪 Salir",
+    back_callback: str = "menu:back",
+    exit_callback: str = "menu:exit"
+) -> List[List[dict]]:
+    """
+    Crea filas de navegación estándar para menús.
+
+    Args:
+        include_back: Incluir botón "Volver"
+        include_exit: Incluir botón "Salir"
+        back_text: Texto del botón "Volver"
+        exit_text: Texto del botón "Salir"
+        back_callback: Callback data para "Volver"
+        exit_callback: Callback data para "Salir"
+
+    Returns:
+        Lista de filas de navegación para usar con create_inline_keyboard
+
+    Ejemplo:
+        # Crear teclado con contenido + navegación
+        content_buttons = [[{"text": "Opción 1", "callback_data": "opt1"}]]
+        nav_rows = create_menu_navigation()
+        all_buttons = content_buttons + nav_rows
+        keyboard = create_inline_keyboard(all_buttons)
+    """
+    navigation_rows = []
+
+    if include_back and include_exit:
+        # Ambos botones en misma fila
+        navigation_rows.append([
+            {"text": back_text, "callback_data": back_callback},
+            {"text": exit_text, "callback_data": exit_callback}
+        ])
+    elif include_back:
+        # Solo botón "Volver"
+        navigation_rows.append([
+            {"text": back_text, "callback_data": back_callback}
+        ])
+    elif include_exit:
+        # Solo botón "Salir"
+        navigation_rows.append([
+            {"text": exit_text, "callback_data": exit_callback}
+        ])
+
+    return navigation_rows
+
+
+def create_content_with_navigation(
+    content_buttons: List[List[dict]],
+    include_back: bool = True,
+    include_exit: bool = True,
+    **nav_kwargs
+) -> InlineKeyboardMarkup:
+    """
+    Crea teclado con botones de contenido + navegación estándar.
+
+    Convenience wrapper que combina create_inline_keyboard y create_menu_navigation.
+
+    Args:
+        content_buttons: Botones de contenido (mismo formato que create_inline_keyboard)
+        include_back: Incluir botón "Volver"
+        include_exit: Incluir botón "Salir"
+        **nav_kwargs: Argumentos adicionales para create_menu_navigation
+
+    Returns:
+        InlineKeyboardMarkup con contenido y navegación
+
+    Ejemplo:
+        content = [[{"text": "Paquete 1", "callback_data": "pkg:1"}]]
+        keyboard = create_content_with_navigation(content)
+    """
+    nav_rows = create_menu_navigation(
+        include_back=include_back,
+        include_exit=include_exit,
+        **nav_kwargs
+    )
+    all_buttons = content_buttons + nav_rows
+    return create_inline_keyboard(all_buttons)
