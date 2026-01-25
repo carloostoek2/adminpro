@@ -273,7 +273,7 @@ class UserMenuMessages(BaseMessageProvider):
         # Create keyboard with package buttons and navigation
         package_buttons = self._create_package_buttons(packages)
         keyboard_rows = package_buttons + [
-            [{"text": "🔙 Volver al Menú VIP", "callback_data": "menu:vip:main"}],
+            [{"text": "🔙 Volver al Menú VIP", "callback_data": "menu:back"}],
             [{"text": "🚪 Salir", "callback_data": "menu:exit"}]
         ]
         keyboard = create_inline_keyboard(keyboard_rows)
@@ -367,13 +367,14 @@ class UserMenuMessages(BaseMessageProvider):
 
         buttons = []
         for package in packages:
-            # Truncate title if too long for button text
-            title = package.title
-            if len(title) > 30:
-                title = title[:27] + "..."
+            # Truncate name if too long for button text
+            # Note: ContentPackage uses 'name' field, not 'title'
+            name = package.name
+            if len(name) > 30:
+                name = name[:27] + "..."
 
             button_row = [{
-                "text": f"⭐ {title} - Me interesa",
+                "text": f"⭐ {name} - Me interesa",
                 "callback_data": f"interest:package:{package.id}"
             }]
             buttons.append(button_row)
@@ -396,8 +397,8 @@ class UserMenuMessages(BaseMessageProvider):
             - "Salir" maintains elegance
         """
         return create_inline_keyboard([
-            [{"text": "💎 Tesoros del Sanctum", "callback_data": "menu:vip:premium"}],
-            [{"text": "📊 Estado de la Membresía", "callback_data": "menu:vip:status"}],
+            [{"text": "💎 Tesoros del Sanctum", "callback_data": "vip:premium"}],
+            [{"text": "📊 Estado de la Membresía", "callback_data": "vip:status"}],
             [{"text": "🚪 Salir", "callback_data": "menu:exit"}]
         ])
 
@@ -412,10 +413,13 @@ class UserMenuMessages(BaseMessageProvider):
             Button text uses Lucien voice terminology:
             - "Muestras del Jardín" not "Browse Content"
             - "Estado de la Cola" not "Queue Status"
+            - "Círculo Exclusivo" not "VIP Info"
+            - "Jardines Públicos" not "Social Media"
             - "Salir" maintains elegance
         """
         return create_inline_keyboard([
             [{"text": "🌸 Muestras del Jardín", "callback_data": "menu:free:content"}],
-            [{"text": "🕐 Estado de la Cola", "callback_data": "menu:free:queue"}],
+            [{"text": "⭐ Círculo Exclusivo", "callback_data": "menu:free:vip"}],
+            [{"text": "🌺 Jardines Públicos", "callback_data": "menu:free:social"}],
             [{"text": "🚪 Salir", "callback_data": "menu:exit"}]
         ])
