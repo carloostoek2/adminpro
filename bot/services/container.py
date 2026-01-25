@@ -53,6 +53,7 @@ class ServiceContainer:
         self._user_service = None
         self._lucien_voice_service = None
         self._session_history = None
+        self._role_detection_service = None
 
         logger.debug("🏭 ServiceContainer inicializado (modo lazy)")
 
@@ -225,6 +226,25 @@ class ServiceContainer:
 
         return self._session_history
 
+    # ===== ROLE DETECTION SERVICE =====
+
+    @property
+    def role_detection(self):
+        """
+        Service de detección de roles (Admin/VIP/Free).
+
+        Se carga lazy (solo en primer acceso).
+
+        Returns:
+            RoleDetectionService: Instancia del service
+        """
+        if self._role_detection_service is None:
+            from bot.services.role_detection import RoleDetectionService
+            logger.debug("🔄 Lazy loading: RoleDetectionService")
+            self._role_detection_service = RoleDetectionService(self._session, self._bot)
+
+        return self._role_detection_service
+
     # ===== UTILIDADES =====
 
     def get_loaded_services(self) -> list[str]:
@@ -254,6 +274,8 @@ class ServiceContainer:
             loaded.append("message")
         if self._session_history is not None:
             loaded.append("session_history")
+        if self._role_detection_service is not None:
+            loaded.append("role_detection")
 
         return loaded
 
