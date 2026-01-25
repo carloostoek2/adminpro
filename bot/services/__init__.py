@@ -4,6 +4,7 @@ from bot.services.channel import ChannelService
 from bot.services.config import ConfigService
 from bot.services.stats import StatsService
 from bot.services.content import ContentService
+from bot.services.role_change import RoleChangeService
 
 __all__ = [
     "ServiceContainer",
@@ -12,4 +13,5 @@ __all__ = [
     "ConfigService",
     "StatsService",
     "ContentService",
+    "RoleChangeService",
 ]

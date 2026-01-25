@@ -55,6 +55,7 @@ class ServiceContainer:
         self._session_history = None
         self._role_detection_service = None
         self._content_service = None
+        self._role_change_service = None
 
         logger.debug("🏭 ServiceContainer inicializado (modo lazy)")
 
@@ -265,6 +266,25 @@ class ServiceContainer:
 
         return self._content_service
 
+    # ===== ROLE CHANGE SERVICE =====
+
+    @property
+    def role_change(self):
+        """
+        Service de registro de cambios de rol (auditoría).
+
+        Se carga lazy (solo en primer acceso).
+
+        Returns:
+            RoleChangeService: Instancia del service
+        """
+        if self._role_change_service is None:
+            from bot.services.role_change import RoleChangeService
+            logger.debug("🔄 Lazy loading: RoleChangeService")
+            self._role_change_service = RoleChangeService(self._session)
+
+        return self._role_change_service
+
     # ===== UTILIDADES =====
 
     def get_loaded_services(self) -> list[str]:
@@ -298,6 +318,8 @@ class ServiceContainer:
             loaded.append("role_detection")
         if self._content_service is not None:
             loaded.append("content")
+        if self._role_change_service is not None:
+            loaded.append("role_change")
 
         return loaded
 
