@@ -30,8 +30,9 @@ async def expire_and_kick_vip_subscribers(bot: Bot):
 
     Proceso:
     1. Marca como expirados los suscriptores cuya fecha pasó
-    2. Expulsa del canal VIP a los expirados
-    3. Loguea resultados
+    2. Loguea cambios de rol (VIP → FREE) en UserRoleChangeLog
+    3. Expulsa del canal VIP a los expirados
+    4. Loguea resultados
 
     Args:
         bot: Instancia del bot de Telegram
@@ -49,11 +50,11 @@ async def expire_and_kick_vip_subscribers(bot: Bot):
                 logger.warning("⚠️ Canal VIP no configurado, saltando expulsión")
                 return
 
-            # Marcar como expirados
-            expired_count = await container.subscription.expire_vip_subscribers()
+            # Marcar como expirados y loguear cambios de rol
+            expired_count = await container.subscription.expire_vip_subscribers(container=container)
 
             if expired_count > 0:
-                logger.info(f"⏱️ {expired_count} suscriptor(es) VIP expirados")
+                logger.info(f"✅ {expired_count} VIP(s) expirados y cambios de rol logueados")
 
                 # Expulsar del canal
                 kicked_count = await container.subscription.kick_expired_vip_from_channel(
@@ -62,7 +63,7 @@ async def expire_and_kick_vip_subscribers(bot: Bot):
 
                 logger.info(f"✅ {kicked_count} usuario(s) expulsados del canal VIP")
             else:
-                logger.debug("✓ No hay VIPs expirados")
+                logger.info("✅ No hay VIPs para expirar")
 
     except Exception as e:
         logger.error(f"❌ Error en tarea de expulsión VIP: {e}", exc_info=True)
