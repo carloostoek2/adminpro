@@ -11,7 +11,7 @@ Responsabilidades:
 import logging
 import secrets
 from datetime import datetime, timedelta
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict, Any
 
 from aiogram import Bot
 from aiogram.types import ChatInviteLink
@@ -25,6 +25,8 @@ from bot.database.models import (
     FreeChannelRequest,
     BotConfig
 )
+from bot.services.container import ServiceContainer
+from bot.database.enums import UserRole, RoleChangeReason
 
 logger = logging.getLogger(__name__)
 
@@ -380,11 +382,16 @@ class SubscriptionService:
 
         return subscriber
 
-    async def expire_vip_subscribers(self) -> int:
+    async def expire_vip_subscribers(self, container: Optional[ServiceContainer] = None) -> int:
         """
         Marca como expirados los suscriptores VIP cuya fecha pasó.
 
+        Si se proporciona container, también loguea cambios de rol.
+
         Esta función se ejecuta periódicamente en background.
+
+        Args:
+            container: ServiceContainer opcional para logging de cambios de rol
 
         Returns:
             Cantidad de suscriptores expirados
@@ -403,6 +410,26 @@ class SubscriptionService:
             subscriber.status = "expired"
             count += 1
             logger.info(f"⏱️ VIP expirado: user {subscriber.user_id}")
+
+            # Log role change if container provided
+            if container and container.role_change:
+                try:
+                    await container.role_change.log_role_change(
+                        user_id=subscriber.user_id,
+                        new_role=UserRole.FREE,
+                        changed_by=0,  # SYSTEM
+                        reason=RoleChangeReason.VIP_EXPIRED,
+                        change_source="SYSTEM",
+                        previous_role=UserRole.VIP,
+                        change_metadata={
+                            "vip_subscriber_id": subscriber.id,
+                            "expired_at": datetime.utcnow().isoformat(),
+                            "original_expiry": subscriber.expiry_date.isoformat() if subscriber.expiry_date else None
+                        }
+                    )
+                    logger.debug(f"✅ Role change logged for expired VIP user {subscriber.user_id}")
+                except Exception as e:
+                    logger.error(f"Error logging role change for user {subscriber.user_id}: {e}")
 
         if count > 0:
             await self.session.commit()
