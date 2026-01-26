@@ -9,17 +9,17 @@ See: .planning/PROJECT.md (updated 2026-01-25)
 
 ## Current Position
 
-Phase: 9 of 11 (User Management Features) - 🔄 IN PROGRESS
-Plan: 03 of 4 (Admin User Handlers) - ✅ COMPLETE
-Status: User management interface with FSM states, 13 callback handlers for navigation/listing/search/detail view/role change/expulsion, integrated into admin router with menu button (2026-01-26)
+Phase: 9 of 11 (User Management Features) - ✅ COMPLETE
+Plan: 04 of 4 (Admin User Expel and Block) - ✅ COMPLETE
+Status: User management complete with expel from channels (with permission validation and confirmation dialog), block placeholder for future implementation, 3 new/updated callback handlers, Block button in all user detail tabs (2026-01-26)
 
-Progress: ███████░░░ 85% (34/40 plans complete)
+Progress: ███████░░░ 88% (35/40 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 34 (v1.0 + v1.1 + Phase 6 Plans 01-04 + Phase 7 Plans 01-04 + Phase 8 Plans 01-04 + Phase 9 Plans 01-03)
-- Average duration: ~13.7 min (updated with Phase 9 Plans 01-03: 5+4+5 min durations)
+- Total plans completed: 35 (v1.0 + v1.1 + Phase 6 Plans 01-04 + Phase 7 Plans 01-04 + Phase 8 Plans 01-04 + Phase 9 Plans 01-04)
+- Average duration: ~13.3 min (updated with Phase 9 Plans 01-04: 5+4+5+2 min durations)
 - Total execution time: ~7.8 hours
 
 **By Phase:**
@@ -34,10 +34,10 @@ Progress: ███████░░░ 85% (34/40 plans complete)
 | 6 | 4 | ~47 min | ~11.8 min |
 | 7 | 4 | ~23 min | ~5.8 min |
 | 8 | 4 | ~16 min | ~4 min |
-| 9 | 3 | ~14 min | ~4.7 min |
+| 9 | 4 | ~16 min | ~4 min |
 
 **Recent Trend:**
-- Last 12 plans: ~7.3 min each (Phase 5 + Phase 6 + Phase 7 + Phase 8 Plans 01-04 + Phase 9 Plans 01-03)
+- Last 13 plans: ~7.2 min each (Phase 5 + Phase 6 + Phase 7 + Phase 8 Plans 01-04 + Phase 9 Plans 01-04)
 - Trend: Stable efficiency (established patterns enable faster execution)
 
 ## Accumulated Context
@@ -138,6 +138,10 @@ Recent decisions affecting current work:
 - [09-03-05]: All navigation uses admin:users:* and admin:user:* patterns - hierarchical callback structure
 - [09-03-06]: Pagination uses 20 users per page - configured in handlers, calculates total pages with round-up
 - [09-03-07]: Filter mapping uses UserRole enum - filter types: all (None), vip (UserRole.VIP), free (UserRole.FREE)
+- [09-04-01]: Permission validation before confirmation - check _can_modify_user before showing expel/block confirmation dialog
+- [09-04-02]: Separate callback_user_expel_confirm function - better code organization than inline confirm handling
+- [09-04-03]: Block button with placeholder handler - UI ready for future implementation, shows clear message about pending DB migration
+- [09-04-04]: Expulsar button in separate row - emphasizes destructive action by separating from other action buttons
 
 **Previous decisions:**
 - [v1.0]: Stateless architecture with session context passed as parameters instead of stored in __init__
@@ -166,7 +170,7 @@ None.
 - **Phase 6 (VIP/Free User Menus):** Phase 6 complete - all 4 plans executed successfully. Navigation system unified across VIP and Free menus.
 - **Phase 7 (Content Management Features):** Phase 7 COMPLETE - AdminContentMessages provider, navigation handlers, FSM states, and CRUD operations implemented. Admin can create, view, edit, and toggle content packages.
 - **Phase 8 (Interest Notification System):** Phase 8 COMPLETE - InterestService with 5-minute debounce, VIP/Free interest handlers with real-time Telegram admin notifications, AdminInterestMessages provider, and interest management admin interface with 8 callback handlers. Fixed enum values (ContentCategory, PackageType, UserRole, RoleChangeReason) to use uppercase format matching enum names. Fixed eager load for package relationship in InterestService.
-- **Phase 9 (User Management Features):** Plans 01-03 COMPLETE - UserManagementService with permission validation, AdminUserMessages provider, user management handlers with full interface. Permission model clarified: admins cannot modify themselves, only super admin can modify other admins. Block/unblock deferred to future phase (requires DB migration).
+- **Phase 9 (User Management Features):** Phase 9 COMPLETE - UserManagementService with permission validation, AdminUserMessages provider, user management handlers with expel from channels (with permission validation and confirmation dialog), block placeholder for future implementation, Block button in all user detail tabs. Permission model: admins cannot modify themselves, only super admin can modify other admins. Block/unblock requires DB migration for User.is_blocked field (Phase 10).
 - **Phase 12 (Rediseño de Menú de Paquetes):** NEW PHASE - Added during Phase 8 testing to address UX issue. Current package menu shows generic "Me interesa" buttons without package information. Needs redesign to show individual package buttons with detail view before registering interest.
 
 ### Quick Tasks Completed
@@ -182,6 +186,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-26
-Stopped at: Completed Phase 9 Plans 01-03 - UserManagementService, AdminUserMessages provider, and user management handlers with full interface including FSM states, 13 callback handlers, router integration, and menu button
+Stopped at: Completed Phase 9 Plan 04 - Expel user from channels with permission validation and confirmation dialog, block placeholder handler, Block button in all user detail tabs
 Resume file: None
-Next phase: Phase 9 Plan 04 (Admin User Management Integration) - testing and UAT for user management features
+Next phase: Phase 10 (User Blocking Features) or Phase 11 (Bot Configuration)
