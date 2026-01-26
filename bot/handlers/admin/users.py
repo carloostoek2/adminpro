@@ -518,8 +518,9 @@ async def callback_user_expel(callback: CallbackQuery, session: AsyncSession):
     """
     Show expel confirmation dialog or execute expel action.
 
-    Callback data format: "admin:user:expel:{user_id}"
-    OR "admin:user:expel:confirm:{user_id}"
+    Callback data format:
+    - "admin:user:expel:{user_id}" - Show confirmation
+    - "admin:user:expel:confirm:{user_id}" - Execute expel
 
     Args:
         callback: Callback query
@@ -530,8 +531,10 @@ async def callback_user_expel(callback: CallbackQuery, session: AsyncSession):
     # Extract user_id from callback
     parts = callback.data.split(":")
 
-    # Check if this is the confirm action
-    is_confirm = len(parts) > 4 and parts[4] == "confirm"
+    # Check if this is a confirm callback
+    if len(parts) > 4 and parts[4] == "confirm":
+        await callback_user_expel_confirm(callback, session)
+        return
 
     try:
         user_id = int(parts[3]) if len(parts) > 3 else None
@@ -551,62 +554,175 @@ async def callback_user_expel(callback: CallbackQuery, session: AsyncSession):
         await callback.answer("❌ Usuario no encontrado", show_alert=True)
         return
 
-    if not is_confirm:
-        # Show confirmation dialog
-        text, keyboard = container.message.admin.user.expel_confirm(user_info)
+    # Check permissions first
+    can_modify, error_msg = await container.user_management._can_modify_user(
+        target_user_id=user_id,
+        admin_user_id=callback.from_user.id
+    )
 
+    if not can_modify:
+        await callback.answer(f"❌ {error_msg}", show_alert=True)
+        return
+
+    # Show confirmation dialog
+    text, keyboard = container.message.admin.user.expel_confirm(user_info)
+
+    try:
+        await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.warning(f"Could not edit message: {e}")
+        else:
+            logger.debug("ℹ️ Mensaje sin cambios, ignorando")
+
+    await callback.answer()
+
+
+async def callback_user_expel_confirm(callback: CallbackQuery, session: AsyncSession):
+    """
+    Execute user expulsion from channels (confirmed).
+
+    Callback data format: "admin:user:expel:confirm:{user_id}"
+
+    Args:
+        callback: Callback query
+        session: Sesión de BD
+    """
+    container = ServiceContainer(session, callback.bot)
+
+    # Extract user_id from callback
+    parts = callback.data.split(":")
+    try:
+        user_id = int(parts[4]) if len(parts) > 4 else None
+    except (ValueError, IndexError):
+        logger.warning(f"⚠️ Invalid user ID in callback: {callback.data}")
+        await callback.answer("❌ ID de usuario inválido", show_alert=True)
+        return
+
+    if not user_id:
+        await callback.answer("❌ ID de usuario inválido", show_alert=True)
+        return
+
+    # Get user info before expulsion
+    user_info = await container.user_management.get_user_info(user_id=user_id)
+
+    if not user_info:
+        await callback.answer("❌ Usuario no encontrado", show_alert=True)
+        return
+
+    admin_id = callback.from_user.id
+
+    # Perform expulsion
+    success, message = await container.user_management.expel_user_from_channels(
+        user_id=user_id,
+        expelled_by=admin_id
+    )
+
+    if not success:
+        # Show error message
+        await callback.answer(f"❌ {message}", show_alert=True)
+        text, keyboard = container.message.admin.user.action_error(message)
         try:
             await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
         except Exception as e:
             if "message is not modified" not in str(e):
                 logger.warning(f"Could not edit message: {e}")
-            else:
-                logger.debug("ℹ️ Mensaje sin cambios, ignorando")
+        return
 
-        await callback.answer()
-    else:
-        # Execute expel
-        admin_id = callback.from_user.id
+    # Parse expelled channels from message
+    # Message format: "Usuario expulsado de canales: VIP, Free"
+    expelled_from = []
+    if "VIP" in message:
+        expelled_from.append("VIP")
+    if "Free" in message:
+        expelled_from.append("Free")
 
-        success, message = await container.user_management.expel_user_from_channels(
-            user_id=user_id,
-            expelled_by=admin_id
-        )
+    # Show success message
+    text, keyboard = container.message.admin.user.expel_success(
+        user_info=user_info,
+        expelled_from=expelled_from
+    )
 
-        if not success:
-            # Show error message
-            await callback.answer(f"❌ {message}", show_alert=True)
-            text, keyboard = container.message.admin.user.action_error(message)
-            try:
-                await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
-            except Exception as e:
-                if "message is not modified" not in str(e):
-                    logger.warning(f"Could not edit message: {e}")
-            return
+    try:
+        await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.warning(f"Could not edit message: {e}")
+        else:
+            logger.debug("ℹ️ Mensaje sin cambios, ignorando")
 
-        # Show success message
-        # Parse expelled channels from message
-        expelled_from = []
-        if "VIP" in message:
-            expelled_from.append("VIP")
-        if "Free" in message:
-            expelled_from.append("Free")
+    await callback.answer("✅ Usuario expulsado", show_alert=True)
+    logger.info(f"✅ Admin {admin_id} expelled user {user_id} from channels: {', '.join(expelled_from)}")
 
-        text, keyboard = container.message.admin.user.expel_success(
-            user_info=user_info,
-            expelled_from=expelled_from
-        )
 
-        try:
-            await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
-        except Exception as e:
-            if "message is not modified" not in str(e):
-                logger.warning(f"Could not edit message: {e}")
-            else:
-                logger.debug("ℹ️ Mensaje sin cambios, ignorando")
+# ===== BLOCK USER (Placeholder) =====
 
-        await callback.answer("✅ Usuario expulsado exitosamente", show_alert=True)
-        logger.info(f"✅ Admin {admin_id} expelled user {user_id} from channels")
+@users_router.callback_query(F.data.startswith("admin:user:block:"))
+async def callback_user_block(callback: CallbackQuery, session: AsyncSession):
+    """
+    Handle block user action (placeholder for future implementation).
+
+    Callback data format: "admin:user:block:{user_id}"
+
+    Note: Full implementation requires adding User.is_blocked field to database.
+    This handler shows a placeholder message explaining the feature is planned.
+
+    Args:
+        callback: Callback query
+        session: Sesión de BD
+    """
+    from aiogram.utils.keyboard import InlineKeyboardBuilder, InlineKeyboardButton
+
+    container = ServiceContainer(session, callback.bot)
+
+    # Extract user_id from callback
+    parts = callback.data.split(":")
+    try:
+        user_id = int(parts[3]) if len(parts) > 3 else None
+    except (ValueError, IndexError):
+        logger.warning(f"⚠️ Invalid user ID in callback: {callback.data}")
+        await callback.answer("❌ ID de usuario inválido", show_alert=True)
+        return
+
+    if not user_id:
+        await callback.answer("❌ ID de usuario inválido", show_alert=True)
+        return
+
+    # Check permissions first
+    can_modify, error_msg = await container.user_management._can_modify_user(
+        target_user_id=user_id,
+        admin_user_id=callback.from_user.id
+    )
+
+    if not can_modify:
+        await callback.answer(f"❌ {error_msg}", show_alert=True)
+        return
+
+    # Show placeholder message
+    placeholder_text = (
+        f"🚫 <b>Bloquear Usuario</b>\n\n"
+        f"<i>Esta función estará disponible en una próxima versión.</i>\n\n"
+        f"<b>Estado:</b> Planificado\n"
+        f"<b>Requisito:</b> Migración de base de datos para agregar campo de bloqueo\n\n"
+        f"<i>El bloqueo impedirá que el usuario use el bot, pero no lo expulsará de los canales. "
+        f"Use la opción 'Expulsar' para remover al usuario de los canales.</i>"
+    )
+
+    keyboard = InlineKeyboardBuilder()
+    keyboard.row(
+        InlineKeyboardButton(text="🔙 Volver al Perfil", callback_data=f"admin:user:view:{user_id}:overview")
+    )
+
+    try:
+        await callback.message.edit_text(text=placeholder_text, reply_markup=keyboard.as_markup(), parse_mode="HTML")
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.warning(f"Could not edit message: {e}")
+        else:
+            logger.debug("ℹ️ Mensaje sin cambios, ignorando")
+
+    await callback.answer("⚠️ Función planificada para próxima versión", show_alert=True)
+    logger.info(f"ℹ️ Admin {callback.from_user.id} attempted to block user {user_id} (feature not yet implemented)")
 
 
 # ===== FILTERS =====
