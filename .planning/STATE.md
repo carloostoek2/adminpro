@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-25)
 
 **Core value:** Cada usuario recibe una experiencia de menú personalizada según su rol (Admin/VIP/Free), con la voz consistente de Lucien y opciones relevantes a su contexto.
-**Current focus:** Phase 8 (Interest Notification System) - Plan 01 of 4 complete
+**Current focus:** Phase 8 (Interest Notification System) - Plan 02 of 4 complete
 
 ## Current Position
 
 Phase: 8 of 11 (Interest Notification System) - 🔄 IN PROGRESS
-Plan: 01 of 4 (InterestService) - ✅ COMPLETE
-Status: InterestService created with deduplication logic (2026-01-26)
+Plan: 02 of 4 (Admin Interest Handlers) - ✅ COMPLETE
+Status: VIP/Free interest handlers refactored with real-time Telegram admin notifications (2026-01-26)
 
-Progress: ████████░░░ 72% (29/40 plans complete)
+Progress: ████████░░░ 72% (30/40 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 29 (v1.0 + v1.1 + Phase 6 Plans 01-04 + Phase 7 Plans 01-04 + Phase 8 Plan 01)
-- Average duration: ~15 min (updated with Phase 8 Plan 01: ~4 min duration)
+- Total plans completed: 30 (v1.0 + v1.1 + Phase 6 Plans 01-04 + Phase 7 Plans 01-04 + Phase 8 Plans 01-02)
+- Average duration: ~15 min (updated with Phase 8 Plans 01-02: ~4 min duration each)
 - Total execution time: ~7.5 hours
 
 **By Phase:**
@@ -33,10 +33,10 @@ Progress: ████████░░░ 72% (29/40 plans complete)
 | 5 | 5 | ~17 min | ~3.4 min |
 | 6 | 4 | ~47 min | ~11.8 min |
 | 7 | 4 | ~23 min | ~5.8 min |
-| 8 | 1 | ~4 min | ~4 min |
+| 8 | 2 | ~8 min | ~4 min |
 
 **Recent Trend:**
-- Last 10 plans: ~9 min each (Phase 5 + Phase 6 + Phase 7 + Phase 8 Plan 01)
+- Last 10 plans: ~8.5 min each (Phase 5 + Phase 6 + Phase 7 + Phase 8 Plans 01-02)
 - Trend: Stable efficiency (established patterns enable faster execution)
 
 ## Accumulated Context
@@ -102,6 +102,9 @@ Recent decisions affecting current work:
 - [08-01]: register_interest returns (success, status, interest) tuple - handlers check if status != "debounce" before notifying admin
 - [08-01]: InterestService follows established service pattern - no session.commit(), no Telegram messages, business logic only
 - [08-01]: ServiceContainer.interest uses lazy loading pattern like other services (content, stats, role_change)
+- [08-02]: Used Config.ADMIN_USER_IDS from environment variable (existing pattern) instead of database query for admin identification
+- [08-02]: VIP and Free handlers have duplicate _send_admin_interest_notification functions for consistency (future refactoring candidate)
+- [08-02]: Contextual Lucien voice closing: "círculo" for VIP users, "jardín" for Free users
 
 **Previous decisions:**
 - [v1.0]: Stateless architecture with session context passed as parameters instead of stored in __init__
@@ -125,7 +128,7 @@ None.
 
 - **Phase 6 (VIP/Free User Menus):** Phase 6 complete - all 4 plans executed successfully. Navigation system unified across VIP and Free menus.
 - **Phase 7 (Content Management Features):** Phase 7 COMPLETE - AdminContentMessages provider, navigation handlers, FSM states, and CRUD operations implemented. Admin can create, view, edit, and toggle content packages.
-- **Phase 8 (Interest Notification System):** InterestService complete with 5-minute debounce deduplication. Admin interest handlers and notification batching pending. Debounce window duration validated as balance between spam prevention and UX.
+- **Phase 8 (Interest Notification System):** Plans 01-02 COMPLETE - InterestService with 5-minute debounce, VIP/Free interest handlers refactored with real-time Telegram admin notifications using Lucien's voice. Plans 03-04 pending: admin interest management UI and notification batching.
 - **Phase 9 (User Management Features):** Permission model needs clarification - can admins modify other admins? Can admins block themselves?
 
 ### Quick Tasks Completed
@@ -137,6 +140,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-26
-Stopped at: Completed 08-01-PLAN.md execution - InterestService with deduplication logic
+Stopped at: Completed 08-02-PLAN.md execution - Admin interest handlers with real-time Telegram notifications
 Resume file: None
-Next phase: Phase 8 Plan 02 (Admin Interest Handlers)
+Next phase: Phase 8 Plan 03 (Admin Interest Management UI)
