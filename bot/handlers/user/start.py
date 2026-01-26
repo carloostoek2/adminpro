@@ -268,7 +268,7 @@ async def _send_welcome_message(
     user_id: int
 ):
     """
-    Envía mensaje de bienvenida normal.
+    Envía mensaje de bienvenida normal y muestra el menú correspondiente.
 
     Args:
         message: Mensaje original
@@ -281,6 +281,51 @@ async def _send_welcome_message(
     # Usuario normal: verificar si es VIP activo
     is_vip = await container.subscription.is_vip_active(user_id)
 
+    # Preparar data dictionary para menu handlers (simula middleware injection)
+    data = {
+        "container": container,
+        "session": None,  # Ya estamos dentro del contexto de sesión
+        "user_role": user.role,  # Usar rol del usuario de BD
+    }
+
+    # Mostrar menú apropiado según rol
+    if is_vip:
+        # Usuario VIP: mostrar menú VIP
+        try:
+            from bot.handlers.vip.menu import show_vip_menu
+            await show_vip_menu(message, data)
+        except ImportError:
+            logger.warning("VIP menu handler no disponible")
+            # Fallback a greeting normal
+            await _send_greeting_fallback(message, container, user_name, user_id, is_vip)
+    else:
+        # Usuario Free: mostrar menú Free
+        try:
+            from bot.handlers.free.menu import show_free_menu
+            await show_free_menu(message, data)
+        except ImportError:
+            logger.warning("Free menu handler no disponible")
+            # Fallback a greeting normal
+            await _send_greeting_fallback(message, container, user_name, user_id, is_vip)
+
+
+async def _send_greeting_fallback(
+    message: Message,
+    container: ServiceContainer,
+    user_name: str,
+    user_id: int,
+    is_vip: bool
+):
+    """
+    Envía mensaje de bienvenida simple (fallback si menu handlers no disponibles).
+
+    Args:
+        message: Mensaje original
+        container: Service container
+        user_name: Nombre del usuario
+        user_id: ID del usuario
+        is_vip: Si es usuario VIP
+    """
     # Calcular días restantes si es VIP
     vip_days_remaining = 0
     if is_vip:
