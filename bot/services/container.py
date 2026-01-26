@@ -57,6 +57,7 @@ class ServiceContainer:
         self._content_service = None
         self._role_change_service = None
         self._interest_service = None
+        self._user_management_service = None
 
         logger.debug("🏭 ServiceContainer inicializado (modo lazy)")
 
@@ -320,21 +321,38 @@ class ServiceContainer:
 
         return self._interest_service
 
-    # ===== UTILIDADES =====
+    # ===== USER MANAGEMENT SERVICE =====
+
+    @property
+    def user_management(self):
         """
-        Service de registro de cambios de rol (auditoría).
+        Service de gestión de usuarios y acciones administrativas.
 
         Se carga lazy (solo en primer acceso).
 
         Returns:
-            RoleChangeService: Instancia del service
-        """
-        if self._role_change_service is None:
-            from bot.services.role_change import RoleChangeService
-            logger.debug("🔄 Lazy loading: RoleChangeService")
-            self._role_change_service = RoleChangeService(self._session)
+            UserManagementService: Instancia del service
 
-        return self._role_change_service
+        Usage:
+            # Get user info
+            info = await container.user_management.get_user_info(user_id=123)
+
+            # Change role
+            success, msg = await container.user_management.change_user_role(
+                user_id=123, new_role=UserRole.VIP, changed_by=456
+            )
+
+            # Expel from channels
+            success, msg = await container.user_management.expel_user_from_channels(
+                user_id=123, expelled_by=456
+            )
+        """
+        if self._user_management_service is None:
+            from bot.services.user_management import UserManagementService
+            logger.debug("🔄 Lazy loading: UserManagementService")
+            self._user_management_service = UserManagementService(self._session, self._bot)
+
+        return self._user_management_service
 
     # ===== UTILIDADES =====
 
@@ -373,6 +391,8 @@ class ServiceContainer:
             loaded.append("role_change")
         if self._interest_service is not None:
             loaded.append("interest")
+        if self._user_management_service is not None:
+            loaded.append("user_management")
 
         return loaded
 
