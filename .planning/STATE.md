@@ -147,10 +147,6 @@ Recent decisions affecting current work:
 - [09-06-01]: Callback data format for role change confirmation is admin:user:role:confirm:{user_id}:{role} - parts[3]="confirm", parts[4]=user_id, parts[5]=role - fixed incorrect index checking that caused "ID is invalid" error
 
 **Phase 10 Decisions (v1.1 - Free Channel Entry Flow):**
-- [10-05-01]: No explicit migration script needed - SQLAlchemy's create_all() automatically adds new nullable columns to existing tables
-- [10-05-02]: Setup script is optional - admin can use manual SQL if preferred (both approaches documented)
-- [10-05-03]: Prerequisites clearly documented - README and script include warnings that Plan 01 must execute first (BotConfig fields must exist)
-- [10-05-04]: Documentation-first approach - migration documentation created before executing Plan 01 to explain auto-creation behavior
 - [10-01-01]: All social media fields are nullable Optional[str] with String(200) for handles/URLs, String(500) for invite link
 - [10-01-02]: ConfigService setters validate for empty/whitespace input before database access and strip whitespace
 - [10-01-03]: Convenience method get_social_media_links() returns dict with only configured platforms (omits None values)
@@ -159,10 +155,22 @@ Recent decisions affecting current work:
 - [10-02-02]: No specific wait time shown to users (per Phase 10 spec) - creates mystery, reduces anxiety
 - [10-02-03]: Fixed button order: Instagram → TikTok → X (priority order per Phase 10)
 - [10-02-04]: Social media keyboard handles various input formats (@handle, full URLs) - flexible admin configuration
+- [10-03-01]: ChatJoinRequest is the ONLY entry point for Free flow - users arrive via public channel link, not through bot
+- [10-03-02]: Callback handler (user:request_free) DISABLED - users don't know bot exists until after requesting access
+- [10-03-03]: Single source of truth: free_join_request.py handles all Free entry flow
+- [10-03-04]: free_flow.py kept as reference but completely commented out with rationale documented
 - [10-04-01]: UserFlowMessages.free_request_approved() provides Lucien-voiced approval message with channel access button
 - [10-04-02]: Stored invite link from BotConfig.free_channel_invite_link preferred over fallback public URL
 - [10-04-03]: Fallback to public t.me URL when no stored link configured, with warning log for admin
 - [10-04-04]: Forbidden exception (blocked user) handled gracefully - logs warning, doesn't fail approval
+- [10-05-01]: No explicit migration script needed - SQLAlchemy's create_all() automatically adds new nullable columns to existing tables
+- [10-05-02]: Manual migration required for existing databases - ALTER TABLE statements needed for new columns
+- [10-05-03]: Setup script is optional - admin can use manual SQL if preferred (both approaches documented)
+- [10-06-01]: Lucien's voice updated to narrative mystery tone - "llamado a la puerta", "umbrales importantes", "se insinúa"
+- [10-06-02]: Social media framed as "fragmentos de presencia" - meta-commentary on Diana's online presence
+- [10-06-03]: Time display REMOVED from duplicate message - mystery over precision, maintains narrative tension
+- [10-06-04]: Approval message: "Listo." dramatic pause, "Entre con intención" call to purposeful action
+- [10-06-05]: All messages use ellipsis (...) for pacing and dramatic effect - Lucien's speech pattern
 
 **Previous decisions:**
 - [v1.0]: Stateless architecture with session context passed as parameters instead of stored in __init__
@@ -208,6 +216,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed Phase 10 ALL PLANS (01-05) - Free channel entry flow with Lucien's voice, social media keyboard, and approval messages. All 5 plans executed including database extension, message provider updates, handler integration, approval messaging, and migration documentation.
+Stopped at: Phase 10 COMPLETE + Post-phase refinements - (1) Consolidated Free flow to ChatJoinRequest only (disabled unused callback handler), (2) Updated Lucien's voice with narrative mystery tone, (3) Removed time display from duplicate message. Manual migration executed to add social media columns to bot_config. Social media placeholders configured (@diana, @diana_tiktok, @diana_x).
 Resume file: None
 Next phase: Phase 11 (Documentation)
