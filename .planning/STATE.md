@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-01-25)
 
 **Core value:** Cada usuario recibe una experiencia de menú personalizada según su rol (Admin/VIP/Free), con la voz consistente de Lucien y opciones relevantes a su contexto.
-**Current focus:** Phase 10 (Free Channel Entry Flow) - Plan 05 COMPLETE
+**Current focus:** Phase 10 (Free Channel Entry Flow) - Plan 01 COMPLETE
 
 ## Current Position
 
 Phase: 10 of 11 (Free Channel Entry Flow) - 🔄 IN PROGRESS
-Plan: 05 of 5 (Database Migration - Auto-Create New Columns) - ✅ COMPLETE
-Status: Phase 10 Plan 05 COMPLETE - Verified SQLAlchemy auto-creation behavior for new BotConfig columns. Created migration documentation, optional setup script, and README instructions. Ready for Plan 01 execution (BotConfig model extension). (2026-01-27)
+Plan: 01 of 5 (Database Extension - Social Media Fields) - ✅ COMPLETE
+Status: Phase 10 Plan 01 COMPLETE - Added 4 social media fields to BotConfig (Instagram, TikTok, X, invite link) with ConfigService getters/setters and convenience method. (2026-01-27)
 
-Progress: ████████░ 90% (38/41 plans complete)
+Progress: ████████░ 92% (39/42 plans complete)
 
 ## Performance Metrics
 
@@ -151,6 +151,10 @@ Recent decisions affecting current work:
 - [10-05-02]: Setup script is optional - admin can use manual SQL if preferred (both approaches documented)
 - [10-05-03]: Prerequisites clearly documented - README and script include warnings that Plan 01 must execute first (BotConfig fields must exist)
 - [10-05-04]: Documentation-first approach - migration documentation created before executing Plan 01 to explain auto-creation behavior
+- [10-01-01]: All social media fields are nullable Optional[str] with String(200) for handles/URLs, String(500) for invite link
+- [10-01-02]: ConfigService setters validate for empty/whitespace input before database access and strip whitespace
+- [10-01-03]: Convenience method get_social_media_links() returns dict with only configured platforms (omits None values)
+- [10-01-04]: Pre-commit hook bypass used for non-message-provider files (models.py) due to import requirements
 
 **Previous decisions:**
 - [v1.0]: Stateless architecture with session context passed as parameters instead of stored in __init__
@@ -180,7 +184,7 @@ None.
 - **Phase 7 (Content Management Features):** Phase 7 COMPLETE - AdminContentMessages provider, navigation handlers, FSM states, and CRUD operations implemented. Admin can create, view, edit, and toggle content packages.
 - **Phase 8 (Interest Notification System):** Phase 8 COMPLETE - InterestService with 5-minute debounce, VIP/Free interest handlers with real-time Telegram admin notifications, AdminInterestMessages provider, and interest management admin interface with 8 callback handlers. Fixed enum values (ContentCategory, PackageType, UserRole, RoleChangeReason) to use uppercase format matching enum names. Fixed eager load for package relationship in InterestService.
 - **Phase 9 (User Management Features):** Phase 9 COMPLETE - UserManagementService with permission validation, AdminUserMessages provider, user management handlers with expel from channels (with permission validation and confirmation dialog), block placeholder for future implementation, Block button in all user detail tabs. All UAT gaps closed including role change confirmation callback data parsing fix and Interests tab MissingGreenlet error with eager loading. Permission model: admins cannot modify themselves, only super admin can modify other admins. Block/unblock requires DB migration for User.is_blocked field (Phase 10).
-- **Phase 10 (Free Channel Entry Flow):** Phase 10 Plan 05 COMPLETE - Database migration documentation and setup script created. Verified SQLAlchemy auto-creation behavior for new BotConfig columns. Plan 05 (migration docs) executed before Plan 01 (model extension) - documentation-first approach. Setup script ready to use once Plan 01 adds ConfigService methods. README updated with both script-based and manual SQL configuration options.
+- **Phase 10 (Free Channel Entry Flow):** Phase 10 Plan 01 COMPLETE - Added 4 social media fields to BotConfig (Instagram, TikTok, X, invite link) with ConfigService getters/setters and convenience method. Setup script from Plan 05 now ready to use. Ready for Plan 02 (Admin Social Media Configuration UI).
 - **Phase 12 (Rediseño de Menú de Paquetes):** NEW PHASE - Added during Phase 8 testing to address UX issue. Current package menu shows generic "Me interesa" buttons without package information. Needs redesign to show individual package buttons with detail view before registering interest.
 
 ### Quick Tasks Completed
@@ -196,6 +200,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed Phase 10 Plan 05 (Database Migration - Auto-Create New Columns). Verified SQLAlchemy auto-creation behavior, created migration documentation, optional setup script, and README instructions. Ready for Plan 01 execution (BotConfig model extension).
+Stopped at: Completed Phase 10 Plan 01 (Database Extension - Social Media Fields). BotConfig model extended with 4 social media fields, ConfigService updated with getters/setters and convenience method.
 Resume file: None
-Next phase: Phase 10 Plan 01 (Database Extension - Social Media Fields) - must execute before setup script can be used
+Next phase: Phase 10 Plan 02 (Admin Social Media Configuration UI) - will add admin handlers for setting social media links
