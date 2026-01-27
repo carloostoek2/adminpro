@@ -9,11 +9,11 @@ See: .planning/PROJECT.md (updated 2026-01-25)
 
 ## Current Position
 
-Phase: 10 of 11 (Free Channel Entry Flow) - ✅ COMPLETE
-Plan: 05 of 5 (Database Migration - Auto-Create New Columns) - ✅ COMPLETE
-Status: Phase 10 COMPLETE - Free channel entry flow enhanced with Lucien's voice, social media keyboard, and approval messages. All 5 plans executed: Database extension (BotConfig social fields), UserFlowMessages updates (Lucien voice + keyboard), handler integration, approval message with channel button, and migration documentation. (2026-01-27)
+Phase: 12 of 13 (Rediseño de Menú de Paquetes con Vista de Detalles) - 🔄 IN PROGRESS
+Plan: 02 of 5 (Package Detail View with Interest Button) - ✅ COMPLETE
+Status: Phase 12 Plan 02 COMPLETE - Package detail view with name, description, price, and category badges. Callback handlers added to VIP and Free routers for user:packages:{id} pattern. (2026-01-27)
 
-Progress: █████████░ 95% (42/44 plans complete)
+Progress: █████████░ 95% (43/46 plans complete)
 
 ## Performance Metrics
 
@@ -172,6 +172,12 @@ Recent decisions affecting current work:
 - [10-06-04]: Approval message: "Listo." dramatic pause, "Entre con intención" call to purposeful action
 - [10-06-05]: All messages use ellipsis (...) for pacing and dramatic effect - Lucien's speech pattern
 
+**Phase 12 Decisions (v1.1 - Rediseño de Menú de Paquetes):**
+- [12-02-01]: Used category.value with hasattr() check for enum compatibility (handles both SQLAlchemy enum and raw string values)
+- [12-02-02]: Detail view includes only back button (no exit) - maintains navigation context per spec
+- [12-02-03]: user:package:interest:{id} callback pattern for interest registration (separate from navigation callbacks)
+- [12-02-04]: Callback handlers follow same structure for VIP and Free routers (consistency pattern)
+
 **Previous decisions:**
 - [v1.0]: Stateless architecture with session context passed as parameters instead of stored in __init__
 - [v1.0]: Session-aware variation selection with ~80 bytes/user memory overhead
@@ -201,7 +207,7 @@ None.
 - **Phase 8 (Interest Notification System):** Phase 8 COMPLETE - InterestService with 5-minute debounce, VIP/Free interest handlers with real-time Telegram admin notifications, AdminInterestMessages provider, and interest management admin interface with 8 callback handlers. Fixed enum values (ContentCategory, PackageType, UserRole, RoleChangeReason) to use uppercase format matching enum names. Fixed eager load for package relationship in InterestService.
 - **Phase 9 (User Management Features):** Phase 9 COMPLETE - UserManagementService with permission validation, AdminUserMessages provider, user management handlers with expel from channels (with permission validation and confirmation dialog), block placeholder for future implementation, Block button in all user detail tabs. All UAT gaps closed including role change confirmation callback data parsing fix and Interests tab MissingGreenlet error with eager loading. Permission model: admins cannot modify themselves, only super admin can modify other admins. Block/unblock requires DB migration for User.is_blocked field (Phase 10).
 - **Phase 10 (Free Channel Entry Flow):** Phase 10 COMPLETE - All 5 plans executed: Database extension (BotConfig social fields + ConfigService), UserFlowMessages with Lucien voice + social keyboard, handler integration, approval message with channel button, migration documentation. Social media buttons show in fixed order (IG → TikTok → X), no specific wait time mentioned (mystery approach), approval sends NEW message with "🚀 Acceder al canal" button. Setup script and README instructions for admin configuration.
-- **Phase 12 (Rediseño de Menú de Paquetes):** NEW PHASE - Added during Phase 8 testing to address UX issue. Current package menu shows generic "Me interesa" buttons without package information. Needs redesign to show individual package buttons with detail view before registering interest.
+- **Phase 12 (Rediseño de Menú de Paquetes):** Phase 12 Plan 02 COMPLETE - Package detail view showing name, description, price, and category with "Me interesa" button. Callback handlers added to VIP and Free routers for user:packages:{id} pattern. Context-aware Lucien voice messages (VIP="círculo", Free="jardín"). Ready for interest confirmation flow (plan 03).
 
 ### Quick Tasks Completed
 
@@ -211,11 +217,12 @@ None.
 
 ### Roadmap Evolution
 
-- **Phase 12 added (2026-01-26):** "Rediseño de Menú de Paquetes con Vista de Detalles" - Discovered during Phase 8 UAT testing. Current UX shows generic "Me interesa" buttons without package information. Needs redesign to show individual package buttons with detail view (description, price) before allowing interest registration. |
+- **Phase 12 added (2026-01-26):** "Rediseño de Menú de Paquetes con Vista de Detalles" - Discovered during Phase 8 UAT testing. Current UX shows generic "Me interesa" buttons without package information. Needs redesign to show individual package buttons with detail view (description, price) before allowing interest registration.
+- **Phase 13 added (2026-01-27):** "VIP Ritualized Entry Flow" - New phase to replace immediate VIP link delivery with a 3-phase sequential admission process (activation confirmation → expectation alignment → access delivery) to increase exclusivity perception, reduce impulsive access, and psychologically prepare users for VIP content. |
 
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Phase 10 COMPLETE + Post-phase refinements - (1) Consolidated Free flow to ChatJoinRequest only (disabled unused callback handler), (2) Updated Lucien's voice with narrative mystery tone, (3) Removed time display from duplicate message. Manual migration executed to add social media columns to bot_config. Social media placeholders configured (@diana, @diana_tiktok, @diana_x).
+Stopped at: Phase 12 Plan 02 COMPLETE - Package detail view with name, description, price, and category badges implemented. Callback handlers added to VIP and Free routers for user:packages:{id} pattern. Context-aware Lucien voice messages working.
 Resume file: None
-Next phase: Phase 11 (Documentation)
+Next phase: Phase 12 Plan 03 (Interest Confirmation with Contact Buttons)
