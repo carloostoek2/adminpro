@@ -334,6 +334,31 @@ class ConfigService:
 
         logger.info(f"🔗 Invite link Free actualizado")
 
+    async def get_social_media_links(self) -> dict[str, str]:
+        """
+        Get all configured social media links as dictionary.
+
+        Returns:
+            Dict with keys 'instagram', 'tiktok', 'x' for configured platforms only.
+            Example: {'instagram': '@diana', 'tiktok': '@diana_tiktok'}
+            (Unconfigured platforms omitted)
+
+        Voice Rationale:
+            Enables easy iteration for keyboard generation.
+            Omitting None values simplifies UI logic.
+        """
+        config = await self.get_config()
+        links = {}
+
+        if config.social_instagram:
+            links['instagram'] = config.social_instagram
+        if config.social_tiktok:
+            links['tiktok'] = config.social_tiktok
+        if config.social_x:
+            links['x'] = config.social_x
+
+        return links
+
     # ===== VALIDACIÓN =====
 
     async def is_fully_configured(self) -> bool:
