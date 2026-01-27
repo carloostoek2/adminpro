@@ -63,6 +63,12 @@ class BotConfig(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Social Media Links (Phase 10)
+    social_instagram = Column(String(200), nullable=True)  # Instagram handle or URL
+    social_tiktok = Column(String(200), nullable=True)     # TikTok handle or URL
+    social_x = Column(String(200), nullable=True)          # X/Twitter handle or URL
+    free_channel_invite_link = Column(String(500), nullable=True)  # Stored invite link for Free channel
+
     def __repr__(self):
         return (
             f"<BotConfig(vip={self.vip_channel_id}, "
