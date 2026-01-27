@@ -1,69 +1,97 @@
-# Project State: LucienVoiceService
-
-**Last Updated:** 2026-01-24
-**Project Status:** v1.0 MILESTONE COMPLETE
+# Project State
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-01-24)
 
-**Core value:**
-Consistencia absoluta en la voz de Lucien: cada mensaje del bot debe sonar elegante, misterioso y natural viniendo del mayordomo, sin importar que handler o flujo lo invoque.
-
-**Current focus:** Planning next milestone - run `/gsd:new-milestone` to begin
+**Core value:** Cada usuario recibe una experiencia de menú personalizada según su rol (Admin/VIP/Free), con la voz consistente de Lucien y opciones relevantes a su contexto.
+**Current focus:** Phase 5 - Role Detection & Database Foundation
 
 ## Current Position
 
-**Phase:** v1.0 COMPLETE
-**Plan:** All 14 plans executed
-**Status:** MILESTONE SHIPPED
-**Progress:** ████████████████████ 100%
-**Last activity:** 2026-01-24 — v1.0 milestone complete
+Phase: 5 of 11 (Role Detection & Database Foundation)
+Plan: 05 of 05 complete
+Status: Phase complete
+Last activity: 2026-01-25 — Quick task 001 completed (fix Phase 5 gaps)
+
+Progress: ██░░░░░░░░░ 14% (v1.1 milestone)
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 19 (v1.0 + v1.1)
+- Average duration: ~19 min
+- Total execution time: ~6.0 hours
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 1 | 3 | ~60 min | ~20 min |
+| 2 | 3 | ~60 min | ~20 min |
+| 3 | 4 | ~80 min | ~20 min |
+| 4 | 4 | ~80 min | ~20 min |
+| 5 | 5 | ~17 min | ~3.4 min |
+
+**Recent Trend:**
+- Last 5 plans: ~3.4 min each (Phase 5 - very efficient)
+- Trend: Improved (faster due to combined plans and established patterns)
 
 ## Accumulated Context
 
-### Key Decisions Made (v1.0)
+### Decisions
 
-All decisions documented with outcomes in PROJECT.md. Key outcomes:
-- Stateless architecture prevents memory leaks
-- AST-based voice linting achieves 5.09ms performance
-- Session-aware variation selection with ~80 bytes/user overhead
-- Manual token redemption deprecated in favor of deep link activation
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
 
-### Current Blockers
-None
+**Phase 5 Decisions (v1.1):**
+- [05-01]: Role detection is stateless (no caching) - always recalculates from fresh sources
+- [05-01]: Priority order: Admin > VIP > Free (first match wins)
+- [05-01]: Middleware gracefully degrades when session not available
+- [05-02A]: Numeric(10,2) instead of Float for price field (currency precision requirement)
+- [05-02B]: Renamed 'metadata' column to 'change_metadata' (SQLAlchemy reserved attribute)
+- [05-04]: Graceful fallback with try/except ImportError for vip/free handlers
+- [05-05]: Auto-detection of previous_role via UserRoleChangeLog query
+- [05-05]: changed_by=0 for SYSTEM automatic changes
 
-### Open Questions
-None for v1.0
+**Quick Task 001 Decisions (Phase 5 gap fixes):**
+- [QT-001-01]: RoleDetectionMiddleware registered on both dispatcher.update (global) and dispatcher.callback_query (specific) for complete coverage
+- [QT-001-02]: expire_vip_subscribers() accepts optional container parameter for role change logging (backward compatible)
+- [QT-001-03]: VIP expiration role changes logged with changed_by=0 (SYSTEM) and RoleChangeReason.VIP_EXPIRED
 
-### TODOs
-All v1.0 TODOs completed:
-- [x] Phase 1: Service Foundation (3 plans)
-- [x] Phase 2: Admin Migration (3 plans)
-- [x] Phase 3: User Flow Migration (4 plans)
-- [x] Phase 4: Advanced Voice Features (4 plans)
+**Previous decisions:**
+- [v1.0]: Stateless architecture with session context passed as parameters instead of stored in __init__
+- [v1.0]: Session-aware variation selection with ~80 bytes/user memory overhead
+- [v1.0]: AST-based voice linting for consistency enforcement (5.09ms performance)
+- [v1.1]: Role-based routing with separate Router instances per role (Admin/VIP/Free)
+- [v1.1]: FSM state hierarchy limited to 3 levels to avoid state soup
+- [v1.1]: ServiceContainer extension with lazy loading pattern
+
+### Pending Todos
+
+None.
+
+### Blockers/Concerns
+
+**Resolved in Phase 5:**
+- ~~Content package types: How many types needed?~~ RESOLVED: 3 types (FREE_CONTENT, VIP_CONTENT, VIP_PREMIUM)
+- ~~Role change audit trail: How to track changes?~~ RESOLVED: UserRoleChangeLog with RoleChangeReason enum
+
+**Remaining concerns:**
+
+- **Phase 6 (VIP/Free User Menus):** Role detection logic needs validation for edge cases around role changes during active menu session (VIP expired but not yet kicked from channel). *Note: RoleDetectionMiddleware registration gap fixed in Quick Task 001.*
+- **Phase 8 (Interest Notification System):** Admin notification UX needs validation - optimal batching interval (5 min, 10 min, 30 min) and how many admins is "too many" for real-time.
+- **Phase 9 (User Management Features):** Permission model needs clarification - can admins modify other admins? Can admins block themselves?
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 001 | Fix Phase 5 gaps | 2026-01-25 | 9b82088 | [001-fix-phase-5-gaps](./quick/001-fix-phase-5-gaps/) |
 
 ## Session Continuity
 
-### What We Built
-
-A centralized message service (LucienVoiceService) that maintains Lucien's sophisticated mayordomo personality consistently across all bot interactions.
-
-### Status
-
-**v1.0 DELIVERED:**
-- 7 message providers
-- 5 handler files migrated
-- ~330 lines of hardcoded strings eliminated
-- 140/140 tests passing
-- 28/28 requirements satisfied
-
-### Next Step
-
-Run `/gsd:new-milestone` to define v2 goals (Voice audit dashboard, A/B testing framework, Internationalization, Gamification messages, etc.)
-
----
-
-*State initialized: 2026-01-23*
-*v1.0 milestone complete: 2026-01-24*
-*Next milestone: TBD*
+Last session: 2026-01-25
+Stopped at: Quick Task 001 complete - Phase 5 gaps fixed (middleware registration, role change integration)
+Resume file: None
+Next phase: Phase 6 (VIP/Free User Menus) or Phase 7 (Content Management Features)

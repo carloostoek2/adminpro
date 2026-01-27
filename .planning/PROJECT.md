@@ -4,6 +4,19 @@
 
 Un servicio centralizado que gestiona todos los mensajes del bot con la voz caracteristica de Lucien (mayordomo sofisticado de Diana). El servicio provee templates organizados por flujo de navegacion, soporta dinamismo completo (variables, condicionales, listas dinamicas, variaciones aleatorias), y retorna mensajes formateados en HTML junto con sus keyboards inline correspondientes. Diseado para reemplazar todos los mensajes hardcodeados dispersos en los handlers actuales.
 
+## Current Milestone: v1.1 Sistema de Menús
+
+**Goal:** Sistema de menús contextuales según rol (Admin/VIP/Free) completamente integrado con LucienVoiceService, con gestión de contenido y notificaciones de interés.
+
+**Target features:**
+- Menús adaptados según rol del usuario (Admin/VIP/Free)
+- Integración profunda con LucienVoiceService para todos los textos
+- Sistema de paquetes de contenido gestionable por admin
+- Sistema "Me interesa" con notificaciones al admin
+- Gestión de usuarios (ver info, cambiar rol, bloquear, expulsar)
+- Flujo de ingreso al canal Free con redes sociales
+- Documentación exhaustiva
+
 ## Current State
 
 **v1.0 SHIPPED** (2026-01-24)
@@ -83,7 +96,40 @@ Testing:
 
 ### Active
 
-No active requirements. v1.0 complete. Next milestone TBD.
+**v1.1 Sistema de Menús** (60 requerimientos):
+
+Role Detection:
+- [ ] MENU-01: Sistema detecta automáticamente rol del usuario
+- [ ] MENU-02: Menú principal adaptado según rol
+- [ ] MENU-03: Admin puede ver rol de cualquier usuario
+- [ ] MENU-04: Recálculo automático de rol
+
+Lucien Menu Providers:
+- [ ] VOICE-01 a VOICE-06: Proveedores de mensajes para menús VIP/Free y flujos
+
+Keyboard & Navigation:
+- [ ] NAV-01 a NAV-05: MenuService centralizado, callbacks unificados
+
+User Menus (VIP/Free):
+- [ ] VIPMENU-01 a VIPMENU-04: Menú VIP con suscripción y premium
+- [ ] FREEMENU-01 a FREEMENU-05: Menú Free con contenido y VIP
+
+Content Packages:
+- [ ] CONTENT-01 a CONTENT-07: Sistema de paquetes en BD
+
+Interest System:
+- [ ] INTEREST-01 a INTEREST-05: Sistema "Me interesa" con notificaciones
+
+Admin Management:
+- [ ] ADMIN-USR-01 a ADMIN-USR-05: Gestión de usuarios
+- [ ] ADMIN-INT-01 a ADMIN-INT-05: Gestión de intereses
+- [ ] ADMIN-CONTENT-01 a ADMIN-CONTENT-05: Gestión de paquetes
+
+Entry Flow:
+- [ ] FLOW-FREE-01 a FLOW-FREE-06: Flujo de ingreso canal Free
+
+Documentation:
+- [ ] DOCS-01 a DOCS-04: Documentación exhaustiva
 
 ### Out of Scope
 
@@ -157,4 +203,4 @@ Existe `docs/guia-estilo.md` con 410 lineas que definen:
 
 ---
 
-*Last updated: 2026-01-24 after v1.0 milestone*
+*Last updated: 2026-01-24 after v1.1 milestone initiation*
