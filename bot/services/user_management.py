@@ -115,8 +115,8 @@ class UserManagementService:
                 "created_at": user.created_at,
                 "updated_at": user.updated_at,
                 "vip_subscription": {
-                    "expires_at": vip_sub.expires_at,
-                    "is_active": vip_sub.expires_at > datetime.utcnow() if vip_sub and vip_sub.expires_at else False,
+                    "expires_at": vip_sub.expiry_date,
+                    "is_active": vip_sub.expiry_date > datetime.utcnow() if vip_sub and vip_sub.expiry_date else False,
                     "token_used": vip_sub.token_used if vip_sub else None
                 } if vip_sub else None,
                 "interests_count": interests_count,
