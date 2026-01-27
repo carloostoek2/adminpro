@@ -18,6 +18,9 @@ from bot.services.role_change import RoleChangeService
 
 logger = logging.getLogger(__name__)
 
+# Pagination constants
+USER_LIST_PAGE_SIZE = 20
+
 
 class UserManagementService:
     """
@@ -58,6 +61,9 @@ class UserManagementService:
         """
         Obtiene información detallada de un usuario.
 
+        Usa eager loading para evitar N+1 queries y problemas de lazy loading
+        fuera del contexto async.
+
         Args:
             user_id: ID del usuario de Telegram
 
@@ -75,31 +81,32 @@ class UserManagementService:
             - role_changes: Lista de cambios de rol (últimos 5)
         """
         try:
-            # Get user with relationships
-            stmt = select(User).where(User.user_id == user_id)
+            # Get user with eager-loaded interests relationship to prevent N+1 queries
+            # and MissingGreenlet errors from lazy loading outside async context
+            stmt = select(User).options(
+                selectinload(User.interests)
+            ).where(User.user_id == user_id)
+
             result = await self.session.execute(stmt)
             user = result.scalar_one_or_none()
 
             if not user:
                 return None
 
-            # Get VIP subscription if exists
-            vip_sub = None
-            if user.role == UserRole.VIP:
-                vip_stmt = select(VIPSubscriber).where(
-                    VIPSubscriber.user_id == user_id
-                ).order_by(desc(VIPSubscriber.join_date))
-                vip_result = await self.session.execute(vip_stmt)
-                vip_sub = vip_result.scalar_one_or_none()
+            # Get VIP subscription - use eager loading via VIPSubscriber.user relationship
+            # This prevents MissingGreenlet error when accessing vip_sub.user later
+            vip_stmt = select(VIPSubscriber).options(
+                selectinload(VIPSubscriber.user)
+            ).where(
+                VIPSubscriber.user_id == user_id
+            ).order_by(desc(VIPSubscriber.join_date))
+            vip_result = await self.session.execute(vip_stmt)
+            vip_sub = vip_result.scalar_one_or_none()
 
-            # Get interests count
-            interest_stmt = select(func.count(UserInterest.id)).where(
-                UserInterest.user_id == user_id
-            )
-            interest_result = await self.session.execute(interest_stmt)
-            interests_count = interest_result.scalar_one() or 0
+            # Get interests count from eager-loaded relationship
+            interests_count = len(user.interests) if user.interests else 0
 
-            # Get role changes (last 5)
+            # Get role changes (last 5) - no relationship defined, use separate query
             changes_stmt = select(UserRoleChangeLog).where(
                 UserRoleChangeLog.user_id == user_id
             ).order_by(desc(UserRoleChangeLog.changed_at)).limit(5)
@@ -278,19 +285,29 @@ class UserManagementService:
         self,
         user_id: int,
         expelled_by: int
-    ) -> Tuple[bool, str]:
+    ) -> Tuple[bool, str, List[str]]:
         """
         Expulsa a un usuario de los canales VIP y Free.
+
+        Maneja expulsión atómica: si falla la expulsión de un canal,
+        intenta deshacer las expulsiones anteriores para mantener consistencia.
 
         Args:
             user_id: ID del usuario a expulsar
             expelled_by: ID del admin que expulsa
 
         Returns:
-            Tupla (success, message):
-            - success: True si se expulsó correctamente
-            - message: Mensaje con resultado (canales de los que se expulsó)
+            Tupla (success, message, expelled_from):
+            - success: True si se expulsó de todos los canales disponibles
+            - message: Mensaje con resultado
+            - expelled_from: Lista de canales de los que se expulsó (para rollback)
         """
+        from bot.services.channel import ChannelService
+
+        channel_service = ChannelService(self.session, self.bot)
+        expelled_from = []
+        errors = []
+
         try:
             # Validate permissions
             can_modify, error_msg = await self._can_modify_user(
@@ -299,48 +316,100 @@ class UserManagementService:
             )
 
             if not can_modify:
-                return (False, error_msg)
+                return (False, error_msg, [])
 
-            from bot.services.channel import ChannelService
-            channel_service = ChannelService(self.session, self.bot)
-
-            expelled_from = []
-
-            # Try to expel from VIP channel
+            # Get channel IDs
             vip_channel_id = await channel_service.get_vip_channel_id()
-            if vip_channel_id:
-                try:
-                    await self.bot.ban_chat_member(
-                        chat_id=vip_channel_id,
-                        user_id=user_id
-                    )
-                    expelled_from.append("VIP")
-                    logger.info(f"User {user_id} expelled from VIP channel by admin {expelled_by}")
-                except Exception as e:
-                    logger.warning(f"Could not expel user {user_id} from VIP channel: {e}")
-
-            # Try to expel from Free channel
             free_channel_id = await channel_service.get_free_channel_id()
+
+            # Collect available channels
+            channels_to_expel = []
+            if vip_channel_id:
+                channels_to_expel.append(("VIP", vip_channel_id))
             if free_channel_id:
+                channels_to_expel.append(("Free", free_channel_id))
+
+            if not channels_to_expel:
+                return (False, "No hay canales configurados para expulsar", [])
+
+            # Expel from all channels (atomic attempt)
+            for channel_name, channel_id in channels_to_expel:
                 try:
                     await self.bot.ban_chat_member(
-                        chat_id=free_channel_id,
+                        chat_id=channel_id,
                         user_id=user_id
                     )
-                    expelled_from.append("Free")
-                    logger.info(f"User {user_id} expelled from Free channel by admin {expelled_by}")
+                    expelled_from.append(channel_name)
+                    logger.info(f"✅ User {user_id} expelled from {channel_name} by admin {expelled_by}")
                 except Exception as e:
-                    logger.warning(f"Could not expel user {user_id} from Free channel: {e}")
+                    error_msg = str(e)
+                    errors.append(f"{channel_name}: {error_msg}")
+                    logger.warning(f"⚠️ Could not expel user {user_id} from {channel_name}: {e}")
 
+            # Handle partial failure - rollback expulsions
+            if errors and expelled_from:
+                logger.warning(f"⚠️ Partial expulsion failure for user {user_id}, rolling back...")
+                await self._rollback_expulsion(user_id, vip_channel_id, free_channel_id, expelled_from)
+                return (
+                    False,
+                    f"Expulsión fallida. Errores: {'; '.join(errors)}. "
+                    f"Se deshicieron las expulsiones parciales.",
+                    []
+                )
+
+            # No channels available or all failed
             if not expelled_from:
-                return (False, "No se pudo expulsar al usuario de ningún canal (puede que no sea miembro)")
+                error_detail = "; ".join(errors) if errors else "El usuario no es miembro de los canales"
+                return (False, f"No se pudo expulsar al usuario: {error_detail}", [])
 
             channels_str = ", ".join(expelled_from)
-            return (True, f"Usuario expulsado de canales: {channels_str}")
+            return (True, f"Usuario expulsado de: {channels_str}", expelled_from)
 
         except Exception as e:
-            logger.error(f"Error expelling user {user_id}: {e}", exc_info=True)
-            return (False, f"Error al expulsar usuario: {str(e)}")
+            logger.error(f"❌ Error expelling user {user_id}: {e}", exc_info=True)
+            # Rollback on unexpected error
+            if expelled_from:
+                await self._rollback_expulsion(user_id, vip_channel_id, free_channel_id, expelled_from)
+            return (False, f"Error al expulsar usuario: {str(e)}", [])
+
+    async def _rollback_expulsion(
+        self,
+        user_id: int,
+        vip_channel_id: Optional[str],
+        free_channel_id: Optional[str],
+        expelled_from: List[str]
+    ) -> None:
+        """
+        Deshace expulsiones parciales en caso de fallo.
+
+        Intenta unban al usuario de los canales donde ya se expulsó.
+        Es "best effort" - si falla el rollback, se loguea pero no se lanza excepción.
+
+        Args:
+            user_id: ID del usuario
+            vip_channel_id: ID del canal VIP
+            free_channel_id: ID del canal Free
+            expelled_from: Lista de canales de los que se expulsó (nombres)
+        """
+        channels_map = {
+            "VIP": vip_channel_id,
+            "Free": free_channel_id
+        }
+
+        for channel_name in expelled_from:
+            channel_id = channels_map.get(channel_name)
+            if not channel_id:
+                continue
+
+            try:
+                await self.bot.unban_chat_member(
+                    chat_id=channel_id,
+                    user_id=user_id,
+                    only_if_banned=True
+                )
+                logger.info(f"↩️ Rolled back expulsion of user {user_id} from {channel_name}")
+            except Exception as e:
+                logger.error(f"❌ Failed to rollback expulsion for user {user_id} from {channel_name}: {e}")
 
     async def get_user_list(
         self,

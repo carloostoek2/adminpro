@@ -12,8 +12,12 @@ from bot.database.enums import UserRole
 from bot.middlewares import DatabaseMiddleware
 from bot.services.container import ServiceContainer
 from bot.states.admin import UserManagementStates
+from bot.utils import CallbackParser, CallbackData
 
 logger = logging.getLogger(__name__)
+
+# Pagination constants
+USER_LIST_PAGE_SIZE = 20
 
 # Router for user management handlers
 users_router = Router(name="admin_users")
@@ -87,9 +91,14 @@ async def callback_users_list(callback: CallbackQuery, session: AsyncSession):
 
     container = ServiceContainer(session, callback.bot)
 
-    # Extract filter type from callback
-    parts = callback.data.split(":")
-    filter_type = parts[3] if len(parts) > 3 else "all"
+    # Parse callback data using CallbackParser
+    cb_data = CallbackParser.parse_or_none(callback.data)
+    if not cb_data:
+        logger.warning(f"⚠️ Invalid callback data: {callback.data}")
+        await callback.answer("❌ Datos inválidos", show_alert=True)
+        return
+
+    filter_type = cb_data.get_str("filter", "all")
 
     # Map filter to UserRole
     role_filter = None
@@ -101,13 +110,13 @@ async def callback_users_list(callback: CallbackQuery, session: AsyncSession):
     # Get users with pagination (first page)
     users, total_count = await container.user_management.get_user_list(
         role=role_filter,
-        limit=20,
+        limit=USER_LIST_PAGE_SIZE,
         offset=0,
         sort_newest_first=True
     )
 
     # Calculate total pages
-    total_pages = (total_count + 19) // 20  # Round up
+    total_pages = (total_count + USER_LIST_PAGE_SIZE - 1) // USER_LIST_PAGE_SIZE  # Round up
 
     # Generate list message
     if users:
@@ -154,16 +163,20 @@ async def callback_users_page(callback: CallbackQuery, session: AsyncSession):
     """
     container = ServiceContainer(session, callback.bot)
 
-    # Extract page and filter from callback
-    parts = callback.data.split(":")
-    try:
-        page = int(parts[3]) if len(parts) > 3 else 1
-    except (ValueError, IndexError):
-        logger.warning(f"⚠️ Invalid page number in callback: {callback.data}")
+    # Parse callback data using CallbackParser
+    cb_data = CallbackParser.parse_or_none(callback.data)
+    if not cb_data:
+        logger.warning(f"⚠️ Invalid callback data: {callback.data}")
+        await callback.answer("❌ Datos inválidos", show_alert=True)
+        return
+
+    page = cb_data.get_int("page", 1)
+    if not page or page < 1:
+        logger.warning(f"⚠️ Invalid page number: {page}")
         await callback.answer("❌ Página inválida", show_alert=True)
         return
 
-    filter_type = parts[4] if len(parts) > 4 else "all"
+    filter_type = cb_data.get_str("filter", "all")
 
     # Map filter to UserRole
     role_filter = None
@@ -173,16 +186,16 @@ async def callback_users_page(callback: CallbackQuery, session: AsyncSession):
         role_filter = UserRole.FREE
 
     # Get users with pagination
-    offset = (page - 1) * 20
+    offset = (page - 1) * USER_LIST_PAGE_SIZE
     users, total_count = await container.user_management.get_user_list(
         role=role_filter,
-        limit=20,
+        limit=USER_LIST_PAGE_SIZE,
         offset=offset,
         sort_newest_first=True
     )
 
     # Calculate total pages
-    total_pages = (total_count + 19) // 20
+    total_pages = (total_count + USER_LIST_PAGE_SIZE - 1) // USER_LIST_PAGE_SIZE
 
     # Generate list message
     if users:
@@ -290,20 +303,19 @@ async def callback_user_view(callback: CallbackQuery, session: AsyncSession):
     """
     container = ServiceContainer(session, callback.bot)
 
-    # Extract user_id and tab from callback
-    parts = callback.data.split(":")
-    try:
-        user_id = int(parts[3]) if len(parts) > 3 else None
-    except (ValueError, IndexError):
-        logger.warning(f"⚠️ Invalid user ID in callback: {callback.data}")
-        await callback.answer("❌ ID de usuario inválido", show_alert=True)
+    # Parse callback data using CallbackParser
+    cb_data = CallbackParser.parse_or_none(callback.data, pattern=["user_id", "tab"])
+    if not cb_data:
+        logger.warning(f"⚠️ Invalid callback data: {callback.data}")
+        await callback.answer("❌ Datos inválidos", show_alert=True)
         return
 
-    tab = parts[4] if len(parts) > 4 else "overview"
-
+    user_id = cb_data.get_int("user_id")
     if not user_id:
         await callback.answer("❌ ID de usuario inválido", show_alert=True)
         return
+
+    tab = cb_data.get_str("tab", "overview")
 
     # Get user info
     user_info = await container.user_management.get_user_info(user_id=user_id)
@@ -353,22 +365,20 @@ async def callback_user_role(callback: CallbackQuery, session: AsyncSession):
     """
     container = ServiceContainer(session, callback.bot)
 
-    # Extract user_id from callback
-    parts = callback.data.split(":")
+    # Parse callback data using CallbackParser
+    cb_data = CallbackParser.parse_or_none(callback.data)
+    if not cb_data:
+        logger.warning(f"⚠️ Invalid callback data: {callback.data}")
+        await callback.answer("❌ Datos inválidos", show_alert=True)
+        return
 
     # Check if this is the confirm action
-    if len(parts) > 4 and parts[3] == "confirm":
+    if cb_data.has("confirm"):
         # Handle actual role change in separate handler
         await callback_user_role_confirm(callback, session)
         return
 
-    try:
-        user_id = int(parts[3]) if len(parts) > 3 else None
-    except (ValueError, IndexError):
-        logger.warning(f"⚠️ Invalid user ID in callback: {callback.data}")
-        await callback.answer("❌ ID de usuario inválido", show_alert=True)
-        return
-
+    user_id = cb_data.get_int("role")
     if not user_id:
         await callback.answer("❌ ID de usuario inválido", show_alert=True)
         return
@@ -437,16 +447,15 @@ async def callback_user_role_confirm(callback: CallbackQuery, session: AsyncSess
     """
     container = ServiceContainer(session, callback.bot)
 
-    # Extract user_id and new_role from callback
-    parts = callback.data.split(":")
-    try:
-        user_id = int(parts[4]) if len(parts) > 4 else None
-    except (ValueError, IndexError):
-        logger.warning(f"⚠️ Invalid user ID in callback: {callback.data}")
-        await callback.answer("❌ ID de usuario inválido", show_alert=True)
+    # Parse callback data using CallbackParser
+    cb_data = CallbackParser.parse_or_none(callback.data)
+    if not cb_data:
+        logger.warning(f"⚠️ Invalid callback data: {callback.data}")
+        await callback.answer("❌ Datos inválidos", show_alert=True)
         return
 
-    new_role_str = parts[5] if len(parts) > 5 else None
+    user_id = cb_data.get_int("confirm")
+    new_role_str = cb_data.get_str("role")
 
     if not user_id or not new_role_str:
         await callback.answer("❌ Parámetros inválidos", show_alert=True)
@@ -528,21 +537,19 @@ async def callback_user_expel(callback: CallbackQuery, session: AsyncSession):
     """
     container = ServiceContainer(session, callback.bot)
 
-    # Extract user_id from callback
-    parts = callback.data.split(":")
+    # Parse callback data using CallbackParser
+    cb_data = CallbackParser.parse_or_none(callback.data)
+    if not cb_data:
+        logger.warning(f"⚠️ Invalid callback data: {callback.data}")
+        await callback.answer("❌ Datos inválidos", show_alert=True)
+        return
 
     # Check if this is a confirm callback
-    if len(parts) > 4 and parts[4] == "confirm":
+    if cb_data.has("confirm"):
         await callback_user_expel_confirm(callback, session)
         return
 
-    try:
-        user_id = int(parts[3]) if len(parts) > 3 else None
-    except (ValueError, IndexError):
-        logger.warning(f"⚠️ Invalid user ID in callback: {callback.data}")
-        await callback.answer("❌ ID de usuario inválido", show_alert=True)
-        return
-
+    user_id = cb_data.get_int("expel")
     if not user_id:
         await callback.answer("❌ ID de usuario inválido", show_alert=True)
         return
@@ -590,14 +597,14 @@ async def callback_user_expel_confirm(callback: CallbackQuery, session: AsyncSes
     """
     container = ServiceContainer(session, callback.bot)
 
-    # Extract user_id from callback
-    parts = callback.data.split(":")
-    try:
-        user_id = int(parts[4]) if len(parts) > 4 else None
-    except (ValueError, IndexError):
-        logger.warning(f"⚠️ Invalid user ID in callback: {callback.data}")
-        await callback.answer("❌ ID de usuario inválido", show_alert=True)
+    # Extract user_id from callback using CallbackParser
+    cb_data = CallbackParser.parse_or_none(callback.data)
+    if not cb_data or not cb_data.has("confirm"):
+        logger.warning(f"⚠️ Invalid callback data: {callback.data}")
+        await callback.answer("❌ Datos inválidos", show_alert=True)
         return
+
+    user_id = cb_data.get_int("confirm")
 
     if not user_id:
         await callback.answer("❌ ID de usuario inválido", show_alert=True)
@@ -612,8 +619,8 @@ async def callback_user_expel_confirm(callback: CallbackQuery, session: AsyncSes
 
     admin_id = callback.from_user.id
 
-    # Perform expulsion
-    success, message = await container.user_management.expel_user_from_channels(
+    # Perform expulsion (returns tuple of 3: success, message, expelled_from list)
+    success, message, expelled_from = await container.user_management.expel_user_from_channels(
         user_id=user_id,
         expelled_by=admin_id
     )
@@ -628,14 +635,6 @@ async def callback_user_expel_confirm(callback: CallbackQuery, session: AsyncSes
             if "message is not modified" not in str(e):
                 logger.warning(f"Could not edit message: {e}")
         return
-
-    # Parse expelled channels from message
-    # Message format: "Usuario expulsado de canales: VIP, Free"
-    expelled_from = []
-    if "VIP" in message:
-        expelled_from.append("VIP")
-    if "Free" in message:
-        expelled_from.append("Free")
 
     # Show success message
     text, keyboard = container.message.admin.user.expel_success(
@@ -675,15 +674,14 @@ async def callback_user_block(callback: CallbackQuery, session: AsyncSession):
 
     container = ServiceContainer(session, callback.bot)
 
-    # Extract user_id from callback
-    parts = callback.data.split(":")
-    try:
-        user_id = int(parts[3]) if len(parts) > 3 else None
-    except (ValueError, IndexError):
-        logger.warning(f"⚠️ Invalid user ID in callback: {callback.data}")
-        await callback.answer("❌ ID de usuario inválido", show_alert=True)
+    # Parse callback data using CallbackParser
+    cb_data = CallbackParser.parse_or_none(callback.data, pattern=["user_id"])
+    if not cb_data:
+        logger.warning(f"⚠️ Invalid callback data: {callback.data}")
+        await callback.answer("❌ Datos inválidos", show_alert=True)
         return
 
+    user_id = cb_data.get_int("user_id")
     if not user_id:
         await callback.answer("❌ ID de usuario inválido", show_alert=True)
         return
@@ -740,9 +738,11 @@ async def callback_users_filters(callback: CallbackQuery, session: AsyncSession)
     """
     from aiogram.utils.keyboard import InlineKeyboardBuilder, InlineKeyboardButton
 
-    # Extract current filter
-    parts = callback.data.split(":")
-    current_filter = parts[3] if len(parts) > 3 else "all"
+    # Parse callback data using CallbackParser
+    cb_data = CallbackParser.parse_or_none(callback.data)
+    current_filter = "all"
+    if cb_data:
+        current_filter = cb_data.get_str("filters", "all")
 
     filter_names = {
         "all": "Todos los Usuarios",
