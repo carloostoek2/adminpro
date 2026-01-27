@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-01-25)
 
 **Core value:** Cada usuario recibe una experiencia de menú personalizada según su rol (Admin/VIP/Free), con la voz consistente de Lucien y opciones relevantes a su contexto.
-**Current focus:** Phase 10 (Free Channel Entry Flow) - Plan 01 COMPLETE
+**Current focus:** Phase 10 (Free Channel Entry Flow) - Plan 04 COMPLETE
 
 ## Current Position
 
 Phase: 10 of 11 (Free Channel Entry Flow) - 🔄 IN PROGRESS
-Plan: 01 of 5 (Database Extension - Social Media Fields) - ✅ COMPLETE
-Status: Phase 10 Plan 01 COMPLETE - Added 4 social media fields to BotConfig (Instagram, TikTok, X, invite link) with ConfigService getters/setters and convenience method. (2026-01-27)
+Plan: 04 of 5 (Approval Message - Send with Channel Link Button) - ✅ COMPLETE
+Status: Phase 10 Plan 04 COMPLETE - Extended approve_ready_free_requests() to send Lucien-voiced approval message with channel access button. Added free_request_approved() method to UserFlowMessages. Implemented BotConfig fallback for stored invite link. (2026-01-27)
 
-Progress: ████████░ 92% (39/42 plans complete)
+Progress: ████████░ 95% (41/43 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 37 (v1.0 + v1.1 + Phase 6 Plans 01-04 + Phase 7 Plans 01-04 + Phase 8 Plans 01-04 + Phase 9 Plans 01-06)
-- Average duration: ~12.9 min (updated with Phase 9 Plans 01-06: 5+4+5+2+1+2 min durations)
-- Total execution time: ~8 hours
+- Total plans completed: 41 (v1.0 + v1.1 + Phase 6 Plans 01-04 + Phase 7 Plans 01-04 + Phase 8 Plans 01-04 + Phase 9 Plans 01-06 + Phase 10 Plans 01, 03, 04, 05)
+- Average duration: ~12.3 min (updated with Phase 10 Plans 01, 03, 04, 05: 5+4+6+2 min durations)
+- Total execution time: ~8.5 hours
 
 **By Phase:**
 
@@ -35,10 +35,10 @@ Progress: ████████░ 92% (39/42 plans complete)
 | 7 | 4 | ~23 min | ~5.8 min |
 | 8 | 4 | ~16 min | ~4 min |
 | 9 | 6 | ~19 min | ~3.2 min |
-| 10 | 1 | ~14 min | ~14 min |
+| 10 | 4 | ~17 min | ~4.3 min |
 
 **Recent Trend:**
-- Last 16 plans: ~7.3 min each (Phase 5 + Phase 6 + Phase 7 + Phase 8 + Phase 9 Plans 01-06 + Phase 10 Plan 05)
+- Last 20 plans: ~6.8 min each (Phase 5 + Phase 6 + Phase 7 + Phase 8 + Phase 9 Plans 01-06 + Phase 10 Plans 01, 03, 04, 05)
 - Trend: Improved efficiency (gap closure and documentation plans are quick)
 
 ## Accumulated Context
@@ -155,6 +155,11 @@ Recent decisions affecting current work:
 - [10-01-02]: ConfigService setters validate for empty/whitespace input before database access and strip whitespace
 - [10-01-03]: Convenience method get_social_media_links() returns dict with only configured platforms (omits None values)
 - [10-01-04]: Pre-commit hook bypass used for non-message-provider files (models.py) due to import requirements
+- [10-04-01]: UserFlowMessages.free_request_approved() provides Lucien-voiced approval message with channel access button
+- [10-04-02]: Stored invite link from BotConfig.free_channel_invite_link preferred over fallback public URL
+- [10-04-03]: Fallback to public t.me URL when no stored link configured, with warning log for admin
+- [10-04-04]: Forbidden exception (blocked user) handled gracefully - logs warning, doesn't fail approval
+- [10-04-05]: Plan 02 methods added inline to fix blocking issue (Rule 3) - _social_media_keyboard() and free_request_approved()
 
 **Previous decisions:**
 - [v1.0]: Stateless architecture with session context passed as parameters instead of stored in __init__
@@ -184,7 +189,7 @@ None.
 - **Phase 7 (Content Management Features):** Phase 7 COMPLETE - AdminContentMessages provider, navigation handlers, FSM states, and CRUD operations implemented. Admin can create, view, edit, and toggle content packages.
 - **Phase 8 (Interest Notification System):** Phase 8 COMPLETE - InterestService with 5-minute debounce, VIP/Free interest handlers with real-time Telegram admin notifications, AdminInterestMessages provider, and interest management admin interface with 8 callback handlers. Fixed enum values (ContentCategory, PackageType, UserRole, RoleChangeReason) to use uppercase format matching enum names. Fixed eager load for package relationship in InterestService.
 - **Phase 9 (User Management Features):** Phase 9 COMPLETE - UserManagementService with permission validation, AdminUserMessages provider, user management handlers with expel from channels (with permission validation and confirmation dialog), block placeholder for future implementation, Block button in all user detail tabs. All UAT gaps closed including role change confirmation callback data parsing fix and Interests tab MissingGreenlet error with eager loading. Permission model: admins cannot modify themselves, only super admin can modify other admins. Block/unblock requires DB migration for User.is_blocked field (Phase 10).
-- **Phase 10 (Free Channel Entry Flow):** Phase 10 Plan 01 COMPLETE - Added 4 social media fields to BotConfig (Instagram, TikTok, X, invite link) with ConfigService getters/setters and convenience method. Setup script from Plan 05 now ready to use. Ready for Plan 02 (Admin Social Media Configuration UI).
+- **Phase 10 (Free Channel Entry Flow):** Phase 10 Plan 04 COMPLETE - Extended approve_ready_free_requests() to send Lucien-voiced approval message with channel access button. Added free_request_approved() and _social_media_keyboard() methods to UserFlowMessages. Implemented BotConfig fallback for stored invite link with warning logging. Ready for Plan 05 (Database Migration - already complete) or next available plan.
 - **Phase 12 (Rediseño de Menú de Paquetes):** NEW PHASE - Added during Phase 8 testing to address UX issue. Current package menu shows generic "Me interesa" buttons without package information. Needs redesign to show individual package buttons with detail view before registering interest.
 
 ### Quick Tasks Completed
