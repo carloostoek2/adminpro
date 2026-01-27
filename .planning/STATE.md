@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-01-25)
 
 **Core value:** Cada usuario recibe una experiencia de menú personalizada según su rol (Admin/VIP/Free), con la voz consistente de Lucien y opciones relevantes a su contexto.
-**Current focus:** Phase 9 (User Management Features) - Plans 01-06 COMPLETE
+**Current focus:** Phase 9 (User Management Features) - Plans 01-05 COMPLETE
 
 ## Current Position
 
 Phase: 9 of 11 (User Management Features) - ✅ COMPLETE
-Plan: 06 of 6 (Gap Closure Plans) - ✅ COMPLETE
-Status: User management complete with all UAT gaps closed - role change confirmation flow fixed (corrected callback data parsing indices), expel from channels with permission validation, block placeholder handler, all user management features functional (2026-01-26)
+Plan: 05 of 5 (Gap Closure Plans) - ✅ COMPLETE
+Status: User management complete with all UAT gaps closed - Interests tab MissingGreenlet error fixed with eager loading, role change confirmation flow fixed, expel from channels with permission validation, block placeholder handler, all user management features functional (2026-01-27)
 
-Progress: ███████░░░ 90% (36/40 plans complete)
+Progress: ███████░░░ 88% (35/40 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 36 (v1.0 + v1.1 + Phase 6 Plans 01-04 + Phase 7 Plans 01-04 + Phase 8 Plans 01-04 + Phase 9 Plans 01-06)
-- Average duration: ~13.1 min (updated with Phase 9 Plans 01-06: 5+4+5+2+2+2 min durations)
-- Total execution time: ~7.9 hours
+- Total plans completed: 35 (v1.0 + v1.1 + Phase 6 Plans 01-04 + Phase 7 Plans 01-04 + Phase 8 Plans 01-04 + Phase 9 Plans 01-05)
+- Average duration: ~13.1 min (updated with Phase 9 Plans 01-05: 5+4+5+2+1 min durations)
+- Total execution time: ~7.8 hours
 
 **By Phase:**
 
@@ -34,10 +34,10 @@ Progress: ███████░░░ 90% (36/40 plans complete)
 | 6 | 4 | ~47 min | ~11.8 min |
 | 7 | 4 | ~23 min | ~5.8 min |
 | 8 | 4 | ~16 min | ~4 min |
-| 9 | 6 | ~18 min | ~3 min |
+| 9 | 5 | ~17 min | ~3.4 min |
 
 **Recent Trend:**
-- Last 15 plans: ~6.8 min each (Phase 5 + Phase 6 + Phase 7 + Phase 8 Plans 01-04 + Phase 9 Plans 01-06)
+- Last 15 plans: ~6.9 min each (Phase 5 + Phase 6 + Phase 7 + Phase 8 Plans 01-04 + Phase 9 Plans 01-05)
 - Trend: Improved efficiency (gap closure plans are quick bugfixes)
 
 ## Accumulated Context
@@ -142,7 +142,7 @@ Recent decisions affecting current work:
 - [09-04-02]: Separate callback_user_expel_confirm function - better code organization than inline confirm handling
 - [09-04-03]: Block button with placeholder handler - UI ready for future implementation, shows clear message about pending DB migration
 - [09-04-04]: Expulsar button in separate row - emphasizes destructive action by separating from other action buttons
-- [09-06-01]: Role change callback data format uses 6 parts: admin:user:role:confirm:{user_id}:{role} where parts[3] = "confirm", parts[4] = user_id, parts[5] = new_role
+- [09-05-01]: Eager loading with selectinload() applied to all InterestService queries that access UserInterest.package relationship - prevents MissingGreenlet error when accessing relationship outside async session context
 
 **Previous decisions:**
 - [v1.0]: Stateless architecture with session context passed as parameters instead of stored in __init__
@@ -171,7 +171,7 @@ None.
 - **Phase 6 (VIP/Free User Menus):** Phase 6 complete - all 4 plans executed successfully. Navigation system unified across VIP and Free menus.
 - **Phase 7 (Content Management Features):** Phase 7 COMPLETE - AdminContentMessages provider, navigation handlers, FSM states, and CRUD operations implemented. Admin can create, view, edit, and toggle content packages.
 - **Phase 8 (Interest Notification System):** Phase 8 COMPLETE - InterestService with 5-minute debounce, VIP/Free interest handlers with real-time Telegram admin notifications, AdminInterestMessages provider, and interest management admin interface with 8 callback handlers. Fixed enum values (ContentCategory, PackageType, UserRole, RoleChangeReason) to use uppercase format matching enum names. Fixed eager load for package relationship in InterestService.
-- **Phase 9 (User Management Features):** Phase 9 COMPLETE - UserManagementService with permission validation, AdminUserMessages provider, user management handlers with expel from channels (with permission validation and confirmation dialog), block placeholder for future implementation, Block button in all user detail tabs. All UAT gaps closed including role change confirmation callback data parsing fix. Permission model: admins cannot modify themselves, only super admin can modify other admins. Block/unblock requires DB migration for User.is_blocked field (Phase 10).
+- **Phase 9 (User Management Features):** Phase 9 COMPLETE - UserManagementService with permission validation, AdminUserMessages provider, user management handlers with expel from channels (with permission validation and confirmation dialog), block placeholder for future implementation, Block button in all user detail tabs. All UAT gaps closed including role change confirmation callback data parsing fix and Interests tab MissingGreenlet error with eager loading. Permission model: admins cannot modify themselves, only super admin can modify other admins. Block/unblock requires DB migration for User.is_blocked field (Phase 10).
 - **Phase 12 (Rediseño de Menú de Paquetes):** NEW PHASE - Added during Phase 8 testing to address UX issue. Current package menu shows generic "Me interesa" buttons without package information. Needs redesign to show individual package buttons with detail view before registering interest.
 
 ### Quick Tasks Completed
@@ -186,7 +186,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-26
-Stopped at: Completed Phase 9 Plan 06 - Fixed role change confirmation callback data parsing (corrected array index from parts[4] to parts[3] for confirm check)
+Last session: 2026-01-27
+Stopped at: Completed Phase 9 Plan 05 - Fixed Interests tab MissingGreenlet error by adding selectinload(UserInterest.package) to all InterestService queries
 Resume file: None
 Next phase: Phase 10 (User Blocking Features) or Phase 11 (Bot Configuration)
