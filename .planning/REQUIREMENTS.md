@@ -18,9 +18,9 @@ Requerimientos para el milestone "Sistema de Menús". Cada requerimiento mapea a
 
 - [x] **VOICE-01**: UserMenuProvider entrega mensajes para menú VIP con voz de Lucien
 - [x] **VOICE-02**: UserMenuProvider entrega mensajes para menú Free con voz de Lucien
-- [ ] **VOICE-03**: UserFlowProvider entrega mensaje de bienvenida al canal Free con redes sociales
-- [ ] **VOICE-04**: UserFlowProvider entrega mensaje de aprobación de acceso con botón al canal
-- [ ] **VOICE-05**: UserFlowProvider entrega mensaje de bienvenida al canal VIP
+- [x] **VOICE-03**: UserFlowProvider entrega mensaje de bienvenida al canal Free con redes sociales
+- [x] **VOICE-04**: UserFlowProvider entrega mensaje de aprobación de acceso con botón al canal
+- [ ] **VOICE-05**: UserFlowProvider entrega mensaje de bienvenida al canal VIP (NOT in Phase 10 - VIP flow is separate)
 - [x] **VOICE-06**: Todos los textos de botones de navegación usan terminología de Lucien
 
 ### Keyboard & Navigation (NAV)
@@ -90,12 +90,12 @@ Requerimientos para el milestone "Sistema de Menús". Cada requerimiento mapea a
 
 ### Free Channel Entry Flow (FLOW-FREE)
 
-- [ ] **FLOW-FREE-01**: Mensaje de solicitud de acceso usa voz de Lucien
-- [ ] **FLOW-FREE-02**: Mensaje incluye redes sociales de la creadora
-- [ ] **FLOW-FREE-03**: Mensaje explica tiempo de espera (justificación de muchas solicitudes)
-- [ ] **FLOW-FREE-04**: Mensaje sugiere seguir redes sociales para acelerar ingreso
-- [ ] **FLOW-FREE-05**: Mensaje de aprobación incluye botón de acceso directo al canal
-- [ ] **FLOW-FREE-06**: Aprobación automática después de tiempo configurado (5 min actual)
+- [x] **FLOW-FREE-01**: Mensaje de solicitud de acceso usa voz de Lucien
+- [x] **FLOW-FREE-02**: Mensaje incluye redes sociales de la creadora
+- [x] **FLOW-FREE-03**: Mensaje explica tiempo de espera (justificación de muchas solicitudes) (justificación de muchas solicitudes)
+- [x] **FLOW-FREE-04**: Mensaje sugiere seguir redes sociales para acelerar ingreso
+- [x] **FLOW-FREE-05**: Mensaje de aprobación incluye botón de acceso directo al canal
+- [x] **FLOW-FREE-06**: Aprobación automática después de tiempo configurado (5 min actual) (existing functionality)
 
 ### Documentation (DOCS)
 
@@ -116,7 +116,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MENU-04 | Phase 5 | Complete |
 | VOICE-01 | Phase 6 | Complete |
 | VOICE-02 | Phase 6 | Complete |
-| VOICE-03 | Phase 10 | Pending |
+| VOICE-03 | Phase 10 | Complete |
+| VOICE-04 | Phase 10 | Complete |
+| VOICE-05 | Phase 10 | Pending (VIP flow - separate phase) |
 | VOICE-04 | Phase 10 | Pending |
 | VOICE-05 | Phase 10 | Pending |
 | VOICE-06 | Phase 6 | Complete |
@@ -161,12 +163,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ADMIN-CONTENT-03 | Phase 7 | Complete |
 | ADMIN-CONTENT-04 | Phase 7 | Complete |
 | ADMIN-CONTENT-05 | Phase 7 | Complete |
-| FLOW-FREE-01 | Phase 10 | Pending |
-| FLOW-FREE-02 | Phase 10 | Pending |
-| FLOW-FREE-03 | Phase 10 | Pending |
-| FLOW-FREE-04 | Phase 10 | Pending |
-| FLOW-FREE-05 | Phase 10 | Pending |
-| FLOW-FREE-06 | Phase 10 | Pending |
+| FLOW-FREE-01 | Phase 10 | Complete |
+| FLOW-FREE-02 | Phase 10 | Complete |
+| FLOW-FREE-03 | Phase 10 | Complete |
+| FLOW-FREE-04 | Phase 10 | Complete |
+| FLOW-FREE-05 | Phase 10 | Complete |
+| FLOW-FREE-06 | Phase 10 | Complete |
 | DOCS-01 | Phase 11 | Pending |
 | DOCS-02 | Phase 11 | Pending |
 | DOCS-03 | Phase 11 | Pending |

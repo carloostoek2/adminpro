@@ -5,9 +5,12 @@ Flujo moderno de Telegram para acceso Free:
 1. Usuario hace click en "Unirse" en el canal Free
 2. Telegram envía ChatJoinRequest al bot
 3. Bot valida canal correcto y verifica duplicados
-4. Si nueva: Registra en BD y notifica tiempo de espera
-5. Si duplicada: Notifica tiempo restante
-6. Background task aprobará automáticamente después de N minutos
+4. Si nueva: Registra en BD y notifica con voz de Lucien + redes sociales
+5. Si duplicada: Notifica tiempo restante con voz de Lucien
+6. Background task aprobará automáticamente después de N minutos con mensaje de bienvenida
+
+ESTE ES EL FLUJO PRINCIPAL - Los usuarios llegan por link público al canal,
+no por el bot. Nadie sabe del bot hasta después de solicitar acceso.
 """
 import logging
 from datetime import datetime, timezone
@@ -33,16 +36,16 @@ async def handle_free_join_request(
     """
     Handler para ChatJoinRequest del canal Free.
 
-    Valida canal, verifica duplicados, registra solicitud y notifica usuario.
+    Valida canal, verifica duplicados, registra solicitud y notifica usuario
+    con voz de Lucien y botones de redes sociales.
 
     Args:
         join_request: Solicitud de unión al canal (evento de Telegram)
         session: Sesión de base de datos (inyectada por middleware)
     """
     user_id = join_request.from_user.id
-    user_name = join_request.from_user.first_name or "Usuario"
     from_chat_id = str(join_request.chat.id)
-    channel_name = join_request.chat.title or "Canal Free"
+    channel_name = join_request.chat.title or "Los Kinkys"
 
     logger.info(f"📺 ChatJoinRequest recibido: User={user_id} | Chat={from_chat_id}")
 
@@ -77,6 +80,9 @@ async def handle_free_join_request(
         from_chat_id=from_chat_id
     )
 
+    # ===== OBTENER LINKS DE REDES SOCIALES =====
+    social_links = await container.config.get_social_media_links()
+
     if not success:
         # ===== SOLICITUD DUPLICADA =====
         logger.info(f"⚠️ Solicitud duplicada detectada: user {user_id}")
@@ -87,36 +93,24 @@ async def handle_free_join_request(
         except Exception as e:
             logger.error(f"❌ Error declinando solicitud duplicada: {e}")
 
-        # Notificar tiempo restante con barra de progreso
+        # Notificar tiempo restante con voz de Lucien
         if request:
-            from bot.utils.formatters import format_progress_with_time
-
             wait_time = await container.config.get_wait_time()
             minutes_since = request.minutes_since_request()
             minutes_remaining = max(0, wait_time - minutes_since)
 
-            # Generar barra de progreso visual
-            progress_bar = format_progress_with_time(minutes_remaining, wait_time, length=15)
+            # Usar UserFlowMessages para mensaje de duplicado (voz de Lucien)
+            duplicate_text = container.message.user.flows.free_request_duplicate(
+                time_elapsed_minutes=minutes_since,
+                time_remaining_minutes=minutes_remaining
+            )
 
             try:
                 await join_request.bot.send_message(
                     chat_id=user_id,
-                    text=(
-                        f"ℹ️ <b>Solicitud Pendiente</b>\n\n"
-                        f"📺 Canal: <b>{channel_name}</b>\n\n"
-                        f"Ya tienes una solicitud en proceso.\n\n"
-                        f"<b>Progreso de Aprobación:</b>\n"
-                        f"<code>{progress_bar}</code>\n\n"
-                        f"⏰ <b>Detalles:</b>\n"
-                        f"• Tiempo transcurrido: <b>{minutes_since} min</b>\n"
-                        f"• Tiempo restante: <b>{minutes_remaining} min</b>\n"
-                        f"• Total configurado: <b>{wait_time} min</b>\n\n"
-                        f"✅ Serás aprobado automáticamente en {minutes_remaining} minutos.\n\n"
-                        f"💡 No es necesario solicitar de nuevo."
-                    ),
+                    text=duplicate_text,
                     parse_mode="HTML"
                 )
-
                 logger.info(f"✅ Notificación de duplicado enviada a user {user_id}")
             except Exception as e:
                 logger.warning(f"⚠️ No se pudo notificar duplicado a user {user_id}: {e}")
@@ -129,26 +123,20 @@ async def handle_free_join_request(
     # Obtener tiempo de espera
     wait_time = await container.config.get_wait_time()
 
-    # Enviar notificación automática
+    # Usar UserFlowMessages para mensaje de éxito con voz de Lucien y botones de redes sociales
+    success_text, keyboard = container.message.user.flows.free_request_success(
+        wait_time_minutes=wait_time,
+        social_links=social_links
+    )
+
     try:
         await join_request.bot.send_message(
             chat_id=user_id,
-            text=(
-                f"👋 <b>Solicitud Registrada</b>\n\n"
-                f"📺 Canal: <b>{channel_name}</b>\n\n"
-                f"Tu solicitud de acceso ha sido registrada exitosamente.\n\n"
-                f"⏱️ <b>Tiempo de espera:</b> {wait_time} minutos\n\n"
-                f"<b>Próximos pasos:</b>\n"
-                f"1️⃣ Tu solicitud está en cola de aprobación\n"
-                f"2️⃣ Serás aprobado automáticamente en ~{wait_time} min\n"
-                f"3️⃣ Recibirás notificación cuando seas aprobado\n"
-                f"4️⃣ Podrás acceder al canal inmediatamente\n\n"
-                f"💡 <i>No necesitas hacer nada más, el proceso es automático.</i>"
-            ),
+            text=success_text,
+            reply_markup=keyboard,
             parse_mode="HTML"
         )
-
-        logger.info(f"✅ Notificación de nueva solicitud enviada a user {user_id}")
+        logger.info(f"✅ Notificación de nueva solicitud enviada a user {user_id} con redes sociales")
     except Exception as e:
         logger.warning(f"⚠️ No se pudo notificar a user {user_id}: {e}")
 

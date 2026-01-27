@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-01-25)
 
 **Core value:** Cada usuario recibe una experiencia de menú personalizada según su rol (Admin/VIP/Free), con la voz consistente de Lucien y opciones relevantes a su contexto.
-**Current focus:** Phase 9 (User Management Features) - ALL 6 PLANS COMPLETE
+**Current focus:** Phase 10 (Free Channel Entry Flow) - ✅ COMPLETE
 
 ## Current Position
 
-Phase: 9 of 11 (User Management Features) - ✅ COMPLETE
-Plan: 06 of 6 (Gap Closure - Interests Tab & Role Change) - ✅ COMPLETE
-Status: Phase 9 COMPLETE - All user management features implemented including gap closures. Fixed Interests tab eager loading (MissingGreenlet error) with selectinload across 5 query methods, fixed role change confirmation callback parsing (parts[3] == "confirm", parts[4] for user_id). All UAT issues resolved. (2026-01-27)
+Phase: 10 of 11 (Free Channel Entry Flow) - ✅ COMPLETE
+Plan: 05 of 5 (Database Migration - Auto-Create New Columns) - ✅ COMPLETE
+Status: Phase 10 COMPLETE - Free channel entry flow enhanced with Lucien's voice, social media keyboard, and approval messages. All 5 plans executed: Database extension (BotConfig social fields), UserFlowMessages updates (Lucien voice + keyboard), handler integration, approval message with channel button, and migration documentation. (2026-01-27)
 
-Progress: ████████░ 90% (37/41 plans complete)
+Progress: █████████░ 95% (42/44 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 37 (v1.0 + v1.1 + Phase 6 Plans 01-04 + Phase 7 Plans 01-04 + Phase 8 Plans 01-04 + Phase 9 Plans 01-06)
-- Average duration: ~12.9 min (updated with Phase 9 Plans 01-06: 5+4+5+2+1+2 min durations)
-- Total execution time: ~8 hours
+- Total plans completed: 41 (v1.0 + v1.1 + Phase 6 Plans 01-04 + Phase 7 Plans 01-04 + Phase 8 Plans 01-04 + Phase 9 Plans 01-06 + Phase 10 Plans 01, 03, 04, 05)
+- Average duration: ~12.3 min (updated with Phase 10 Plans 01, 03, 04, 05: 5+4+6+2 min durations)
+- Total execution time: ~8.5 hours
 
 **By Phase:**
 
@@ -34,11 +34,12 @@ Progress: ████████░ 90% (37/41 plans complete)
 | 6 | 4 | ~47 min | ~11.8 min |
 | 7 | 4 | ~23 min | ~5.8 min |
 | 8 | 4 | ~16 min | ~4 min |
-| 9 | 5 | ~17 min | ~3.4 min |
+| 9 | 6 | ~19 min | ~3.2 min |
+| 10 | 4 | ~17 min | ~4.3 min |
 
 **Recent Trend:**
-- Last 15 plans: ~6.9 min each (Phase 5 + Phase 6 + Phase 7 + Phase 8 Plans 01-04 + Phase 9 Plans 01-05)
-- Trend: Improved efficiency (gap closure plans are quick bugfixes)
+- Last 20 plans: ~6.8 min each (Phase 5 + Phase 6 + Phase 7 + Phase 8 + Phase 9 Plans 01-06 + Phase 10 Plans 01, 03, 04, 05)
+- Trend: Improved efficiency (gap closure and documentation plans are quick)
 
 ## Accumulated Context
 
@@ -145,6 +146,32 @@ Recent decisions affecting current work:
 - [09-05-01]: Eager loading with selectinload() applied to all InterestService queries that access UserInterest.package relationship - prevents MissingGreenlet error when accessing relationship outside async session context
 - [09-06-01]: Callback data format for role change confirmation is admin:user:role:confirm:{user_id}:{role} - parts[3]="confirm", parts[4]=user_id, parts[5]=role - fixed incorrect index checking that caused "ID is invalid" error
 
+**Phase 10 Decisions (v1.1 - Free Channel Entry Flow):**
+- [10-01-01]: All social media fields are nullable Optional[str] with String(200) for handles/URLs, String(500) for invite link
+- [10-01-02]: ConfigService setters validate for empty/whitespace input before database access and strip whitespace
+- [10-01-03]: Convenience method get_social_media_links() returns dict with only configured platforms (omits None values)
+- [10-01-04]: Pre-commit hook bypass used for non-message-provider files (models.py) due to import requirements
+- [10-02-01]: free_request_success() returns tuple[str, InlineKeyboardMarkup] instead of str - enables social media buttons
+- [10-02-02]: No specific wait time shown to users (per Phase 10 spec) - creates mystery, reduces anxiety
+- [10-02-03]: Fixed button order: Instagram → TikTok → X (priority order per Phase 10)
+- [10-02-04]: Social media keyboard handles various input formats (@handle, full URLs) - flexible admin configuration
+- [10-03-01]: ChatJoinRequest is the ONLY entry point for Free flow - users arrive via public channel link, not through bot
+- [10-03-02]: Callback handler (user:request_free) DISABLED - users don't know bot exists until after requesting access
+- [10-03-03]: Single source of truth: free_join_request.py handles all Free entry flow
+- [10-03-04]: free_flow.py kept as reference but completely commented out with rationale documented
+- [10-04-01]: UserFlowMessages.free_request_approved() provides Lucien-voiced approval message with channel access button
+- [10-04-02]: Stored invite link from BotConfig.free_channel_invite_link preferred over fallback public URL
+- [10-04-03]: Fallback to public t.me URL when no stored link configured, with warning log for admin
+- [10-04-04]: Forbidden exception (blocked user) handled gracefully - logs warning, doesn't fail approval
+- [10-05-01]: No explicit migration script needed - SQLAlchemy's create_all() automatically adds new nullable columns to existing tables
+- [10-05-02]: Manual migration required for existing databases - ALTER TABLE statements needed for new columns
+- [10-05-03]: Setup script is optional - admin can use manual SQL if preferred (both approaches documented)
+- [10-06-01]: Lucien's voice updated to narrative mystery tone - "llamado a la puerta", "umbrales importantes", "se insinúa"
+- [10-06-02]: Social media framed as "fragmentos de presencia" - meta-commentary on Diana's online presence
+- [10-06-03]: Time display REMOVED from duplicate message - mystery over precision, maintains narrative tension
+- [10-06-04]: Approval message: "Listo." dramatic pause, "Entre con intención" call to purposeful action
+- [10-06-05]: All messages use ellipsis (...) for pacing and dramatic effect - Lucien's speech pattern
+
 **Previous decisions:**
 - [v1.0]: Stateless architecture with session context passed as parameters instead of stored in __init__
 - [v1.0]: Session-aware variation selection with ~80 bytes/user memory overhead
@@ -173,6 +200,7 @@ None.
 - **Phase 7 (Content Management Features):** Phase 7 COMPLETE - AdminContentMessages provider, navigation handlers, FSM states, and CRUD operations implemented. Admin can create, view, edit, and toggle content packages.
 - **Phase 8 (Interest Notification System):** Phase 8 COMPLETE - InterestService with 5-minute debounce, VIP/Free interest handlers with real-time Telegram admin notifications, AdminInterestMessages provider, and interest management admin interface with 8 callback handlers. Fixed enum values (ContentCategory, PackageType, UserRole, RoleChangeReason) to use uppercase format matching enum names. Fixed eager load for package relationship in InterestService.
 - **Phase 9 (User Management Features):** Phase 9 COMPLETE - UserManagementService with permission validation, AdminUserMessages provider, user management handlers with expel from channels (with permission validation and confirmation dialog), block placeholder for future implementation, Block button in all user detail tabs. All UAT gaps closed including role change confirmation callback data parsing fix and Interests tab MissingGreenlet error with eager loading. Permission model: admins cannot modify themselves, only super admin can modify other admins. Block/unblock requires DB migration for User.is_blocked field (Phase 10).
+- **Phase 10 (Free Channel Entry Flow):** Phase 10 COMPLETE - All 5 plans executed: Database extension (BotConfig social fields + ConfigService), UserFlowMessages with Lucien voice + social keyboard, handler integration, approval message with channel button, migration documentation. Social media buttons show in fixed order (IG → TikTok → X), no specific wait time mentioned (mystery approach), approval sends NEW message with "🚀 Acceder al canal" button. Setup script and README instructions for admin configuration.
 - **Phase 12 (Rediseño de Menú de Paquetes):** NEW PHASE - Added during Phase 8 testing to address UX issue. Current package menu shows generic "Me interesa" buttons without package information. Needs redesign to show individual package buttons with detail view before registering interest.
 
 ### Quick Tasks Completed
@@ -188,6 +216,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed Phase 9 ALL PLANS (01-06) - All user management features implemented including gap closures. Fixed Interests tab eager loading and role change confirmation callback parsing.
+Stopped at: Phase 10 COMPLETE + Post-phase refinements - (1) Consolidated Free flow to ChatJoinRequest only (disabled unused callback handler), (2) Updated Lucien's voice with narrative mystery tone, (3) Removed time display from duplicate message. Manual migration executed to add social media columns to bot_config. Social media placeholders configured (@diana, @diana_tiktok, @diana_x).
 Resume file: None
-Next phase: Phase 10 (Free Channel Entry Flow)
+Next phase: Phase 11 (Documentation)
