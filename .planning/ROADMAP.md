@@ -59,28 +59,22 @@ Plans:
 
 ### Phase 5: Role Detection & Database Foundation
 **Goal**: Sistema detecta automáticamente rol del usuario (Admin/VIP/Free) con modelos de base de datos para contenido, intereses y cambios de rol.
-**Depends on**: Phase 4
-**Requirements**: MENU-01, MENU-02, MENU-04, CONTENT-01, CONTENT-02, CONTENT-03
-**Success Criteria** (what must be TRUE):
-  1. Sistema detecta automáticamente si un usuario es Admin, VIP o Free al interactuar
-  2. Menú principal del usuario se adapta según su rol detectado
-  3. Sistema recalcula rol automáticamente cuando cambia estado (Free→VIP, VIP expira)
-  4. Base de datos tiene tablas ContentPackage y UserInterest para gestionar contenido e intereses
-  5. ContentService existe con métodos CRUD para paquetes de contenido
-**Plans**: 6 plans
+**Status**: ✅ Complete
+**Completed**: 2026-01-25
+**Plans**: 5 plans completed
 
 Plans:
-- [ ] 05-01-PLAN.md — Role detection service with automatic role calculation
-- [ ] 05-02A-PLAN.md — Database enums and ContentPackage model
-- [ ] 05-02B-PLAN.md — UserInterest and UserRoleChangeLog models with table creation
-- [ ] 05-03-PLAN.md — ContentService with CRUD operations for content packages
-- [ ] 05-04A-PLAN.md — MenuRouter and admin menu handler
-- [ ] 05-04B-PLAN.md — VIP and Free menu handlers with exports
-- [ ] 05-05-PLAN.md — RoleChangeService for audit logging (MENU-04)
+- [x] 05-01-PLAN.md — Role detection service with automatic role calculation
+- [x] 05-02A-PLAN.md — Database enums and ContentPackage model
+- [x] 05-02B-PLAN.md — UserInterest and UserRoleChangeLog models with table creation
+- [x] 05-03-PLAN.md — ContentService with CRUD operations for content packages
+- [x] 05-04-PLAN.md — MenuRouter and role-based menu routing
+- [x] 05-05-PLAN.md — RoleChangeService for audit logging (MENU-04)
 
 ### Phase 6: VIP/Free User Menus
 **Goal**: Menús de usuario VIP y Free con información de suscripción, contenido Premium y botones "Me interesa" que notifican al admin.
-**Depends on**: Phase 5
+**Status**: ✅ Complete
+**Completed**: 2026-01-25
 **Requirements**: VOICE-01, VOICE-02, VOICE-06, VIPMENU-01, VIPMENU-02, VIPMENU-03, VIPMENU-04, FREEMENU-01, FREEMENU-02, FREEMENU-03, FREEMENU-04, FREEMENU-05, CONTENT-07, NAV-04, NAV-05
 **Success Criteria** (what must be TRUE):
   1. Usuario VIP abre menú con su información de suscripción (expiración, plan actual)
@@ -91,10 +85,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — UserMenuProvider with VIP and Free menu messages
-- [ ] 06-02-PLAN.md — VIP menu handlers with subscription info and Premium section
-- [ ] 06-03-PLAN.md — Free menu handlers with content browsing and VIP upgrade option
-- [ ] 06-04-PLAN.md — Menu navigation with back buttons replacing hardcoded keyboards.py
+- [x] 06-01-PLAN.md — UserMenuProvider with VIP and Free menu messages
+- [x] 06-02-PLAN.md — VIP menu handlers with subscription info and Premium section
+- [x] 06-03-PLAN.md — Free menu handlers with content browsing and VIP upgrade option
+- [x] 06-04-PLAN.md — Menu navigation with back buttons replacing hardcoded keyboards.py
 
 ### Phase 7: Admin Menu with Content Management
 **Goal**: Menú admin con gestión completa de paquetes de contenido (crear, editar, desactivar) y navegación centralizada.
@@ -202,12 +196,12 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10 → 11
 | 2. Template Organization & Admin Migration | v1.0 | 3/3 | Complete | 2026-01-23 |
 | 3. User Flow Migration & Testing Strategy | v1.0 | 4/4 | Complete | 2026-01-24 |
 | 4. Advanced Voice Features | v1.0 | 4/4 | Complete | 2026-01-24 |
-| 5. Role Detection & Database Foundation | v1.1 | 0/TBD | Not started | - |
-| 6. VIP/Free User Menus | v1.1 | 0/TBD | Not started | - |
+| 5. Role Detection & Database Foundation | v1.1 | 5/5 | Complete | 2026-01-25 |
+| 6. VIP/Free User Menus | v1.1 | 4/4 | Complete | 2026-01-25 |
 | 7. Admin Menu with Content Management | v1.1 | 0/TBD | Not started | - |
 | 8. Interest Notification System | v1.1 | 0/TBD | Not started | - |
 | 9. User Management Features | v1.1 | 0/TBD | Not started | - |
 | 10. Free Channel Entry Flow | v1.1 | 0/TBD | Not started | - |
 | 11. Documentation | v1.1 | 0/TBD | Not started | - |
 
-**v1.1 Progress:** ░░░░░░░░░░ 0% (0/60 requirements complete)
+**v1.1 Progress:** ████░░░░░░░ 20% (9/60 requirements complete)

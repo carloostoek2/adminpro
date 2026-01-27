@@ -9,57 +9,57 @@ Requerimientos para el milestone "Sistema de Menús". Cada requerimiento mapea a
 
 ### Role Detection (MENU)
 
-- [ ] **MENU-01**: Sistema detecta automáticamente el rol del usuario (Admin/VIP/Free)
-- [ ] **MENU-02**: Menú principal de usuario se adapta según rol detectado
+- [x] **MENU-01**: Sistema detecta automáticamente el rol del usuario (Admin/VIP/Free)
+- [x] **MENU-02**: Menú principal de usuario se adapta según rol detectado
 - [ ] **MENU-03**: Admin puede ver rol de cualquier usuario en el sistema
-- [ ] **MENU-04**: Sistema recalcula rol automáticamente cuando cambia estado (Free→VIP, VIP expira)
+- [x] **MENU-04**: Sistema recalcula rol automáticamente cuando cambia estado (Free→VIP, VIP expira)
 
 ### Lucien Menu Providers (VOICE)
 
-- [ ] **VOICE-01**: UserMenuProvider entrega mensajes para menú VIP con voz de Lucien
-- [ ] **VOICE-02**: UserMenuProvider entrega mensajes para menú Free con voz de Lucien
+- [x] **VOICE-01**: UserMenuProvider entrega mensajes para menú VIP con voz de Lucien
+- [x] **VOICE-02**: UserMenuProvider entrega mensajes para menú Free con voz de Lucien
 - [ ] **VOICE-03**: UserFlowProvider entrega mensaje de bienvenida al canal Free con redes sociales
 - [ ] **VOICE-04**: UserFlowProvider entrega mensaje de aprobación de acceso con botón al canal
 - [ ] **VOICE-05**: UserFlowProvider entrega mensaje de bienvenida al canal VIP
-- [ ] **VOICE-06**: Todos los textos de botones de navegación usan terminología de Lucien
+- [x] **VOICE-06**: Todos los textos de botones de navegación usan terminología de Lucien
 
 ### Keyboard & Navigation (NAV)
 
 - [ ] **NAV-01**: MenuService centraliza lógica de navegación entre menús
 - [ ] **NAV-02**: Sistema de callbacks unificado para navegación (menu:main, menu:vip, menu:free)
 - [ ] **NAV-03**: Navegación jerárquica con botón "Volver" en submenús
-- [ ] **NAV-04**: Handlers de menú usuario integrados con LucienVoiceService
-- [ ] **NAV-05**: Sistema de menús reemplaza completamente keyboards.py hardcoded
+- [x] **NAV-04**: Handlers de menú usuario integrados con LucienVoiceService
+- [x] **NAV-05**: Sistema de menús reemplaza completamente keyboards.py hardcoded
 
 ### User Menu: VIP (VIPMENU)
 
-- [ ] **VIPMENU-01**: Menú VIP muestra información de suscripción (fecha expiración, plan actual)
-- [ ] **VIPMENU-02**: Menú VIP tiene opción "Premium" con información de compra
-- [ ] **VIPMENU-03**: Cada paquete premium tiene botón "Me interesa" que notifica al admin
-- [ ] **VIPMENU-04**: Menú VIP tiene botón "Volver" y navegación fluida
+- [x] **VIPMENU-01**: Menú VIP muestra información de suscripción (fecha expiración, plan actual)
+- [x] **VIPMENU-02**: Menú VIP tiene opción "Premium" con información de compra
+- [x] **VIPMENU-03**: Cada paquete premium tiene botón "Me interesa" que notifica al admin
+- [x] **VIPMENU-04**: Menú VIP tiene botón "Volver" y navegación fluida
 
 ### User Menu: Free (FREEMENU)
 
-- [ ] **FREEMENU-01**: Menú Free tiene opción "Mi Contenido" que abre submenú de paquetes
-- [ ] **FREEMENU-02**: Submenú "Mi Contenido" lista paquetes disponibles (cada uno es un botón)
-- [ ] **FREEMENU-03**: Cada paquete muestra información con botón "Me interesa"
-- [ ] **FREEMENU-04**: Menú Free tiene opción "Canal VIP" con info de suscripción
-- [ ] **FREEMENU-05**: Menú Free tiene opción de redes sociales/contenido gratuito
+- [x] **FREEMENU-01**: Menú Free tiene opción "Mi Contenido" que abre submenú de paquetes
+- [x] **FREEMENU-02**: Submenú "Mi Contenido" lista paquetes disponibles (cada uno es un botón)
+- [x] **FREEMENU-03**: Cada paquete muestra información con botón "Me interesa"
+- [x] **FREEMENU-04**: Menú Free tiene opción "Canal VIP" con info de suscripción
+- [x] **FREEMENU-05**: Menú Free tiene opción de redes sociales/contenido gratuito
 
 ### Content Packages (CONTENT)
 
-- [ ] **CONTENT-01**: Base de datos con tabla ContentPackage (id, name, description, price, category)
-- [ ] **CONTENT-02**: Categorías de paquetes: FREE_CONTENT, VIP_CONTENT, VIP_PREMIUM
-- [ ] **CONTENT-03**: Servicio ContentService para CRUD de paquetes
+- [x] **CONTENT-01**: Base de datos con tabla ContentPackage (id, name, description, price, category)
+- [x] **CONTENT-02**: Categorías de paquetes: FREE_CONTENT, VIP_CONTENT, VIP_PREMIUM
+- [x] **CONTENT-03**: Servicio ContentService para CRUD de paquetes
 - [ ] **CONTENT-04**: Admin puede crear paquetes de contenido
 - [ ] **CONTENT-05**: Admin puede editar paquetes existentes
 - [ ] **CONTENT-06**: Admin puede eliminar paquetes (soft delete con is_active)
-- [ ] **CONTENT-07**: Menús de usuario muestran solo paquetes activos (is_active=True)
+- [x] **CONTENT-07**: Menús de usuario muestran solo paquetes activos (is_active=True)
 
 ### Interest Notifications (INTEREST)
 
-- [ ] **INTEREST-01**: Botón "Me interesa" en paquetes crea registro de interés
-- [ ] **INTEREST-02**: Base de datos con tabla UserInterest (id, user_id, package_id, created_at, is_attended)
+- [x] **INTEREST-01**: Botón "Me interesa" en paquetes crea registro de interés
+- [x] **INTEREST-02**: Base de datos con tabla UserInterest (id, user_id, package_id, created_at, is_attended)
 - [ ] **INTEREST-03**: Admin recibe mensaje privado cuando usuario marca "Me interesa"
 - [ ] **INTEREST-04**: Notificación incluye: nombre de usuario, link al perfil, paquete de interés
 - [ ] **INTEREST-05**: Servicio InterestService para gestión de intereses

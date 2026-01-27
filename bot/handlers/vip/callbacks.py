@@ -70,6 +70,83 @@ async def handle_vip_premium(callback: CallbackQuery, **kwargs):
         await callback.answer("⚠️ Error cargando contenido premium", show_alert=True)
 
 
+@vip_callbacks_router.callback_query(lambda c: c.data == "vip:status")
+async def handle_vip_status(callback: CallbackQuery, **kwargs):
+    """
+    Muestra el estado de la membresía VIP del usuario.
+
+    Args:
+        callback: CallbackQuery de Telegram
+        **kwargs: Data del handler (container, session, etc.)
+    """
+    data = kwargs.get("data", {})
+    container = data.get("container")
+    user = callback.from_user
+
+    if not container:
+        await callback.answer("⚠️ Error: servicio no disponible", show_alert=True)
+        return
+
+    try:
+        # Get VIP subscription info
+        subscriber = await container.subscription.get_vip_subscriber(user.id)
+
+        if subscriber and subscriber.expires_at:
+            expiry_date = subscriber.expires_at.strftime("%d de %B de %Y")
+            status_text = (
+                f"🎩 <b>Lucien:</b>\n\n"
+                f"<i>El estado de su membresía en el círculo exclusivo...</i>\n\n"
+                f"<b>⭐ Estado de la Membresía VIP</b>\n\n"
+                f"<b>Miembro:</b> {user.first_name or 'Visitante'}\n"
+                f"<b>Estado:</b> ✅ Activa\n"
+                f"<b>Expira:</b> {expiry_date}\n\n"
+                f"<i>Su acceso al sanctum está asegurado hasta la fecha indicada.</i>"
+            )
+        elif subscriber:
+            # Permanent membership
+            status_text = (
+                f"🎩 <b>Lucien:</b>\n\n"
+                f"<i>El estado de su membresía en el círculo exclusivo...</i>\n\n"
+                f"<b>⭐ Estado de la Membresía VIP</b>\n\n"
+                f"<b>Miembro:</b> {user.first_name or 'Visitante'}\n"
+                f"<b>Estado:</b> ✅ Permanente\n"
+                f"<b>Expira:</b> Nunca\n\n"
+                f"<i>Su acceso al sanctum es eterno.</i>"
+            )
+        else:
+            status_text = (
+                f"🎩 <b>Lucien:</b>\n\n"
+                f"<i>Parece que hay un confusión con su estatus...</i>\n\n"
+                f"<b>⭐ Estado de la Membresía VIP</b>\n\n"
+                f"<b>Miembro:</b> {user.first_name or 'Visitante'}\n"
+                f"<b>Estado:</b> ❌ No encontrada\n\n"
+                f"<i>Por favor, contacte a los custodios del sanctum.</i>"
+            )
+
+        # Create navigation keyboard using helper
+        from bot.utils.keyboards import create_content_with_navigation
+
+        # Empty content + navigation only (back and exit)
+        keyboard = create_content_with_navigation(
+            content_buttons=[],
+            back_text="⬅️ Volver al Menú VIP",
+            back_callback="menu:back"
+        )
+
+        await callback.message.edit_text(
+            status_text,
+            parse_mode="HTML",
+            reply_markup=keyboard
+        )
+        await callback.answer()
+
+        logger.info(f"⭐ Estado VIP mostrado a {user.id}")
+
+    except Exception as e:
+        logger.error(f"Error mostrando estado VIP a {user.id}: {e}", exc_info=True)
+        await callback.answer("⚠️ Error cargando estado de membresía", show_alert=True)
+
+
 @vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("interest:package:"))
 async def handle_package_interest(callback: CallbackQuery, **kwargs):
     """

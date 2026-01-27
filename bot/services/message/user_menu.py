@@ -16,7 +16,7 @@ from typing import Tuple, List, Optional
 from aiogram.types import InlineKeyboardMarkup
 
 from bot.services.message.base import BaseMessageProvider
-from bot.utils.keyboards import create_inline_keyboard
+from bot.utils.keyboards import create_inline_keyboard, create_menu_navigation, create_content_with_navigation
 from bot.utils.formatters import escape_html
 from bot.database.models import ContentPackage
 
@@ -39,6 +39,7 @@ class UserMenuMessages(BaseMessageProvider):
     - No session or bot stored as instance variables
     - All context passed as method parameters
     - Returns (text, keyboard) tuples for complete UI
+    - Uses create_content_with_navigation for consistent navigation buttons
 
     Examples:
         >>> provider = UserMenuMessages()
@@ -272,11 +273,7 @@ class UserMenuMessages(BaseMessageProvider):
 
         # Create keyboard with package buttons and navigation
         package_buttons = self._create_package_buttons(packages)
-        keyboard_rows = package_buttons + [
-            [{"text": "🔙 Volver al Menú VIP", "callback_data": "menu:vip:main"}],
-            [{"text": "🚪 Salir", "callback_data": "menu:exit"}]
-        ]
-        keyboard = create_inline_keyboard(keyboard_rows)
+        keyboard = create_content_with_navigation(package_buttons)
 
         return text, keyboard
 
@@ -344,11 +341,11 @@ class UserMenuMessages(BaseMessageProvider):
 
         # Create keyboard with package buttons and navigation
         package_buttons = self._create_package_buttons(packages)
-        keyboard_rows = package_buttons + [
-            [{"text": "🔙 Volver al Menú Free", "callback_data": "menu:free:main"}],
-            [{"text": "🚪 Salir", "callback_data": "menu:exit"}]
-        ]
-        keyboard = create_inline_keyboard(keyboard_rows)
+        keyboard = create_content_with_navigation(
+            package_buttons,
+            back_text="⬅️ Volver al Menú Free",
+            back_callback="menu:free:main"
+        )
 
         return text, keyboard
 
@@ -367,13 +364,14 @@ class UserMenuMessages(BaseMessageProvider):
 
         buttons = []
         for package in packages:
-            # Truncate title if too long for button text
-            title = package.title
-            if len(title) > 30:
-                title = title[:27] + "..."
+            # Truncate name if too long for button text
+            # Note: ContentPackage uses 'name' field, not 'title'
+            name = package.name
+            if len(name) > 30:
+                name = name[:27] + "..."
 
             button_row = [{
-                "text": f"⭐ {title} - Me interesa",
+                "text": f"⭐ {name} - Me interesa",
                 "callback_data": f"interest:package:{package.id}"
             }]
             buttons.append(button_row)
@@ -393,13 +391,16 @@ class UserMenuMessages(BaseMessageProvider):
             Button text uses Lucien voice terminology:
             - "Tesoros del Sanctum" not "Premium Content"
             - "Estado de la Membresía" not "Subscription Status"
-            - "Salir" maintains elegance
+            - Uses create_menu_navigation for consistent "Salir" button
         """
-        return create_inline_keyboard([
-            [{"text": "💎 Tesoros del Sanctum", "callback_data": "menu:vip:premium"}],
-            [{"text": "📊 Estado de la Membresía", "callback_data": "menu:vip:status"}],
-            [{"text": "🚪 Salir", "callback_data": "menu:exit"}]
-        ])
+        content_buttons = [
+            [{"text": "💎 Tesoros del Sanctum", "callback_data": "vip:premium"}],
+            [{"text": "📊 Estado de la Membresía", "callback_data": "vip:status"}],
+        ]
+        return create_content_with_navigation(
+            content_buttons,
+            include_back=False  # Main menu has only exit button
+        )
 
     def _free_main_menu_keyboard(self) -> InlineKeyboardMarkup:
         """
@@ -412,10 +413,16 @@ class UserMenuMessages(BaseMessageProvider):
             Button text uses Lucien voice terminology:
             - "Muestras del Jardín" not "Browse Content"
             - "Estado de la Cola" not "Queue Status"
-            - "Salir" maintains elegance
+            - "Círculo Exclusivo" not "VIP Info"
+            - "Jardines Públicos" not "Social Media"
+            - Uses create_menu_navigation for consistent "Salir" button
         """
-        return create_inline_keyboard([
+        content_buttons = [
             [{"text": "🌸 Muestras del Jardín", "callback_data": "menu:free:content"}],
-            [{"text": "🕐 Estado de la Cola", "callback_data": "menu:free:queue"}],
-            [{"text": "🚪 Salir", "callback_data": "menu:exit"}]
-        ])
+            [{"text": "⭐ Círculo Exclusivo", "callback_data": "menu:free:vip"}],
+            [{"text": "🌺 Jardines Públicos", "callback_data": "menu:free:social"}],
+        ]
+        return create_content_with_navigation(
+            content_buttons,
+            include_back=False  # Main menu has only exit button
+        )
