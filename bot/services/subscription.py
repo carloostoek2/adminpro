@@ -791,50 +791,76 @@ class SubscriptionService:
                     user_id=request.user_id
                 )
 
-                # 2. Crear invite link personalizado (1 uso, 24h)
-                invite_link = await self.create_invite_link(
-                    channel_id=free_channel_id,
-                    user_id=request.user_id,
-                    expire_hours=24
+                # 2. Obtener enlace del canal (stored or fallback to public URL)
+                # Import UserFlowMessages
+                from bot.services.message.user_flows import UserFlowMessages
+
+                # Get stored invite link from BotConfig
+                config_result = await self.session.execute(
+                    select(BotConfig).where(BotConfig.id == 1)
                 )
+                bot_config = config_result.scalar_one_or_none()
 
-                # 3. Enviar mensaje de confirmación al usuario
-                try:
-                    confirmation_message = (
-                        f"🎉 <b>¡Acceso Free Aprobado!</b>\n\n"
-                        f"Tu solicitud ha sido aprobada exitosamente.\n\n"
-                        f"📺 Canal: <b>{channel_name}</b>\n\n"
-                        f"👇 <b>Haz click aquí para ingresar:</b>\n"
-                        f"{invite_link.invite_link}\n\n"
-                        f"⚠️ <b>Importante:</b>\n"
-                        f"• El link expira en 24 horas\n"
-                        f"• Solo puedes usarlo 1 vez\n"
-                        f"• No lo compartas con otros\n\n"
-                        f"¡Disfruta del contenido! 🎯"
-                    )
-
-                    await self.bot.send_message(
-                        chat_id=request.user_id,
-                        text=confirmation_message,
-                        parse_mode="HTML"
-                    )
-
-                    logger.info(
-                        f"✅ Confirmación enviada a user {request.user_id} con invite link"
-                    )
-
-                except Exception as notify_error:
-                    # Distinguir entre usuario que bloqueó el bot vs otros errores
-                    error_type = type(notify_error).__name__
-                    if "Forbidden" in error_type or "blocked" in str(notify_error).lower():
+                # Use stored link or fallback to public t.me URL
+                channel_link = None
+                if bot_config and bot_config.free_channel_invite_link:
+                    channel_link = bot_config.free_channel_invite_link
+                else:
+                    # Fallback: construct public URL from channel_id
+                    # Assumes channel_id is numeric or @username format
+                    if free_channel_id.startswith('@'):
+                        channel_link = f"t.me/{free_channel_id[1:]}"
                         logger.warning(
-                            f"⚠️ Usuario {request.user_id} bloqueó el bot, no se envió confirmación"
+                            "⚠️ free_channel_invite_link not configured in BotConfig. "
+                            "Using fallback URL. Admin should set stored invite link for better UX."
+                        )
+                    elif free_channel_id.startswith('-100'):
+                        # Extract numeric ID for public channel lookup
+                        # This won't work for private channels, but it's a best-effort fallback
+                        channel_link = None  # Will skip sending message
+                        # Better: admin should set stored link
+                        logger.warning(
+                            f"⚠️ No stored invite link found. "
+                            f"Admin should set free_channel_invite_link in BotConfig."
                         )
                     else:
-                        logger.error(
-                            f"❌ Error inesperado enviando confirmación a {request.user_id}: {notify_error}"
+                        channel_link = f"t.me/{free_channel_id}"
+                        logger.warning(
+                            "⚠️ free_channel_invite_link not configured in BotConfig. "
+                            "Using fallback URL. Admin should set stored invite link for better UX."
                         )
-                    # No falla la aprobación si el mensaje no se envía
+
+                # 3. Enviar mensaje de aprobación con Lucien's voice
+                if channel_link:
+                    try:
+                        flows = UserFlowMessages()
+                        approval_text, keyboard = flows.free_request_approved(
+                            channel_name=channel_name,
+                            channel_link=channel_link
+                        )
+
+                        await self.bot.send_message(
+                            chat_id=request.user_id,
+                            text=approval_text,
+                            reply_markup=keyboard,
+                            parse_mode="HTML"
+                        )
+
+                        logger.info(
+                            f"✅ Aprobación enviada a user {request.user_id} con enlace al canal"
+                        )
+                    except Exception as notify_error:
+                        # Distinguir entre usuario que bloqueó el bot vs otros errores
+                        error_type = type(notify_error).__name__
+                        if "Forbidden" in error_type or "blocked" in str(notify_error).lower():
+                            logger.warning(
+                                f"⚠️ Usuario {request.user_id} bloqueó el bot, no se envió confirmación"
+                            )
+                        else:
+                            logger.error(
+                                f"❌ Error inesperado enviando confirmación a {request.user_id}: {notify_error}"
+                            )
+                        # No falla la aprobación si el mensaje no se envía
 
                 # 4. Marcar como procesada
                 request.processed = True
