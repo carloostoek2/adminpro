@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-01-25)
 
 **Core value:** Cada usuario recibe una experiencia de menú personalizada según su rol (Admin/VIP/Free), con la voz consistente de Lucien y opciones relevantes a su contexto.
-**Current focus:** Phase 10 (Free Channel Entry Flow) - Plan 04 COMPLETE
+**Current focus:** Phase 10 (Free Channel Entry Flow) - Plan 02 COMPLETE
 
 ## Current Position
 
 Phase: 10 of 11 (Free Channel Entry Flow) - 🔄 IN PROGRESS
-Plan: 04 of 5 (Approval Message - Send with Channel Link Button) - ✅ COMPLETE
-Status: Phase 10 Plan 04 COMPLETE - Extended approve_ready_free_requests() to send Lucien-voiced approval message with channel access button. Added free_request_approved() method to UserFlowMessages. Implemented BotConfig fallback for stored invite link. (2026-01-27)
+Plan: 02 of 5 (UserFlowMessages - Lucien Voice + Social Media Keyboard) - ✅ COMPLETE
+Status: Phase 10 Plan 02 COMPLETE - Updated UserFlowMessages with Lucien's voice, social media keyboard generation, and approval messaging. All verification tests pass. (2026-01-27)
 
-Progress: ████████░ 95% (41/43 plans complete)
+Progress: ████████░ 93% (40/43 plans complete)
 
 ## Performance Metrics
 
@@ -155,11 +155,14 @@ Recent decisions affecting current work:
 - [10-01-02]: ConfigService setters validate for empty/whitespace input before database access and strip whitespace
 - [10-01-03]: Convenience method get_social_media_links() returns dict with only configured platforms (omits None values)
 - [10-01-04]: Pre-commit hook bypass used for non-message-provider files (models.py) due to import requirements
+- [10-02-01]: free_request_success() returns tuple[str, InlineKeyboardMarkup] instead of str - enables social media buttons
+- [10-02-02]: No specific wait time shown to users (per Phase 10 spec) - creates mystery, reduces anxiety
+- [10-02-03]: Fixed button order: Instagram → TikTok → X (priority order per Phase 10)
+- [10-02-04]: Social media keyboard handles various input formats (@handle, full URLs) - flexible admin configuration
 - [10-04-01]: UserFlowMessages.free_request_approved() provides Lucien-voiced approval message with channel access button
 - [10-04-02]: Stored invite link from BotConfig.free_channel_invite_link preferred over fallback public URL
 - [10-04-03]: Fallback to public t.me URL when no stored link configured, with warning log for admin
 - [10-04-04]: Forbidden exception (blocked user) handled gracefully - logs warning, doesn't fail approval
-- [10-04-05]: Plan 02 methods added inline to fix blocking issue (Rule 3) - _social_media_keyboard() and free_request_approved()
 
 **Previous decisions:**
 - [v1.0]: Stateless architecture with session context passed as parameters instead of stored in __init__
@@ -189,7 +192,7 @@ None.
 - **Phase 7 (Content Management Features):** Phase 7 COMPLETE - AdminContentMessages provider, navigation handlers, FSM states, and CRUD operations implemented. Admin can create, view, edit, and toggle content packages.
 - **Phase 8 (Interest Notification System):** Phase 8 COMPLETE - InterestService with 5-minute debounce, VIP/Free interest handlers with real-time Telegram admin notifications, AdminInterestMessages provider, and interest management admin interface with 8 callback handlers. Fixed enum values (ContentCategory, PackageType, UserRole, RoleChangeReason) to use uppercase format matching enum names. Fixed eager load for package relationship in InterestService.
 - **Phase 9 (User Management Features):** Phase 9 COMPLETE - UserManagementService with permission validation, AdminUserMessages provider, user management handlers with expel from channels (with permission validation and confirmation dialog), block placeholder for future implementation, Block button in all user detail tabs. All UAT gaps closed including role change confirmation callback data parsing fix and Interests tab MissingGreenlet error with eager loading. Permission model: admins cannot modify themselves, only super admin can modify other admins. Block/unblock requires DB migration for User.is_blocked field (Phase 10).
-- **Phase 10 (Free Channel Entry Flow):** Phase 10 Plan 04 COMPLETE - Extended approve_ready_free_requests() to send Lucien-voiced approval message with channel access button. Added free_request_approved() and _social_media_keyboard() methods to UserFlowMessages. Implemented BotConfig fallback for stored invite link with warning logging. Ready for Plan 05 (Database Migration - already complete) or next available plan.
+- **Phase 10 (Free Channel Entry Flow):** Phase 10 Plan 02 COMPLETE - Updated UserFlowMessages with Lucien's voice ("🎩 <b>Lucien:</b>" header), social media keyboard generation (IG → TikTok → X fixed order), and approval messaging with channel access button. All verification tests pass. Fixed syntax error in subscription.py exception handling. Ready for Plan 03 (Free flow handler update) or next available plan.
 - **Phase 12 (Rediseño de Menú de Paquetes):** NEW PHASE - Added during Phase 8 testing to address UX issue. Current package menu shows generic "Me interesa" buttons without package information. Needs redesign to show individual package buttons with detail view before registering interest.
 
 ### Quick Tasks Completed
@@ -205,6 +208,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed Phase 10 Plan 04 (Approval Message - Send with Channel Link Button). Extended approve_ready_free_requests() to use UserFlowMessages, added free_request_approved() method with channel button.
+Stopped at: Completed Phase 10 Plan 02 (UserFlowMessages - Lucien Voice + Social Media Keyboard). Verified all requirements, created SUMMARY.md. Work was already completed in previous commit (8d11af0).
 Resume file: None
-Next phase: Phase 10 Plan 02 or Plan 03 (Plans 02-03 not yet executed, Plan 05 complete) - need to determine execution order
+Next phase: Phase 10 Plan 03 (Free flow handler update to use tuple return type) or Phase 10 Plan 01 (if not yet executed)
