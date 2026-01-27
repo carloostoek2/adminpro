@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Tuple, Dict, Any
 from sqlalchemy import select, and_, or_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from bot.database.models import UserInterest, ContentPackage, User
 from bot.database.enums import ContentCategory
@@ -115,8 +116,10 @@ class InterestService:
                 logger.error(f"Package {package_id} not found for interest registration")
                 return (False, "error", None)
 
-            # Check existing interest
-            existing_stmt = select(UserInterest).where(
+            # Check existing interest with eager load of package
+            existing_stmt = select(UserInterest).options(
+                selectinload(UserInterest.package)
+            ).where(
                 and_(
                     UserInterest.user_id == user_id,
                     UserInterest.package_id == package_id
@@ -150,7 +153,11 @@ class InterestService:
                     attended_at=None,
                     created_at=datetime.utcnow()
                 )
+                # Set the package relationship to avoid extra query
+                new_interest.package = package
                 self.session.add(new_interest)
+                # Flush to get ID
+                await self.session.flush()
                 logger.info(
                     f"Registered new interest for user {user_id}, package {package_id}"
                 )
@@ -204,8 +211,11 @@ class InterestService:
             ... )
         """
         try:
-            # Build base query with joins
-            stmt = select(UserInterest).join(ContentPackage)
+            # Build base query with joins and eager load relationships
+            stmt = select(UserInterest).options(
+                selectinload(UserInterest.package),
+                selectinload(UserInterest.user)
+            ).join(ContentPackage)
 
             # Apply filters
             conditions = []
@@ -261,7 +271,10 @@ class InterestService:
             Objeto UserInterest o None si no existe
         """
         try:
-            stmt = select(UserInterest).where(UserInterest.id == interest_id)
+            stmt = select(UserInterest).options(
+                selectinload(UserInterest.package),
+                selectinload(UserInterest.user)
+            ).where(UserInterest.id == interest_id)
             result = await self.session.execute(stmt)
             return result.scalar_one_or_none()
         except Exception as e:
@@ -284,7 +297,10 @@ class InterestService:
             Lista de UserInterest ordenados por fecha (más reciente primero)
         """
         try:
-            stmt = select(UserInterest).where(
+            stmt = select(UserInterest).options(
+                selectinload(UserInterest.package),
+                selectinload(UserInterest.user)
+            ).where(
                 UserInterest.user_id == user_id
             ).order_by(
                 desc(UserInterest.created_at)
@@ -366,7 +382,9 @@ class InterestService:
             total_attended = len(attended_result.scalars().all())
 
             # By package type
-            stmt = select(UserInterest).join(ContentPackage)
+            stmt = select(UserInterest).options(
+                selectinload(UserInterest.package)
+            ).join(ContentPackage)
             result = await self.session.execute(stmt)
             all_interests = result.scalars().all()
 
@@ -376,7 +394,10 @@ class InterestService:
                 by_package_type[pkg_type] = by_package_type.get(pkg_type, 0) + 1
 
             # Recent interests (last 5)
-            recent_stmt = select(UserInterest).order_by(
+            recent_stmt = select(UserInterest).options(
+                selectinload(UserInterest.package),
+                selectinload(UserInterest.user)
+            ).order_by(
                 desc(UserInterest.created_at)
             ).limit(5)
             recent_result = await self.session.execute(recent_stmt)
