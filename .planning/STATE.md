@@ -10,10 +10,10 @@ See: .planning/PROJECT.md (updated 2026-01-25)
 ## Current Position
 
 Phase: 12 of 13 (Rediseño de Menú de Paquetes con Vista de Detalles) - 🔄 IN PROGRESS
-Plan: 02 of 5 (Package Detail View with Interest Button) - ✅ COMPLETE
-Status: Phase 12 Plan 02 COMPLETE - Package detail view with name, description, price, and category badges. Callback handlers added to VIP and Free routers for user:packages:{id} pattern. (2026-01-27)
+Plan: 01 of 5 (Package List Redesign) - ✅ COMPLETE
+Status: Phase 12 Plan 01 COMPLETE - Minimalist package list with individual buttons, sorted by price (free first, then ascending). Callback pattern migrated to user:packages:{id}. (2026-01-27)
 
-Progress: █████████░ 95% (43/46 plans complete)
+Progress: █████████░ 95% (44/47 plans complete)
 
 ## Performance Metrics
 
@@ -173,6 +173,10 @@ Recent decisions affecting current work:
 - [10-06-05]: All messages use ellipsis (...) for pacing and dramatic effect - Lucien's speech pattern
 
 **Phase 12 Decisions (v1.1 - Rediseño de Menú de Paquetes):**
+- [12-01-01]: Sorting algorithm prioritizes free packages first (price=None), then paid packages sorted by price ASC - accessible options first reduces friction
+- [12-01-02]: Minimalist button format (name only) - shows only "📦 {package.name}" (no price, no category) to prevent information overload
+- [12-01-03]: Callback pattern migration to user:packages:{id} - separates navigation (to detail view) from action (interest registration)
+- [12-01-04]: Lucien's voice maintained (simplified body text) - keeps consistency while reducing cognitive load (removed package count)
 - [12-02-01]: Used category.value with hasattr() check for enum compatibility (handles both SQLAlchemy enum and raw string values)
 - [12-02-02]: Detail view includes only back button (no exit) - maintains navigation context per spec
 - [12-02-03]: user:package:interest:{id} callback pattern for interest registration (separate from navigation callbacks)
@@ -207,7 +211,7 @@ None.
 - **Phase 8 (Interest Notification System):** Phase 8 COMPLETE - InterestService with 5-minute debounce, VIP/Free interest handlers with real-time Telegram admin notifications, AdminInterestMessages provider, and interest management admin interface with 8 callback handlers. Fixed enum values (ContentCategory, PackageType, UserRole, RoleChangeReason) to use uppercase format matching enum names. Fixed eager load for package relationship in InterestService.
 - **Phase 9 (User Management Features):** Phase 9 COMPLETE - UserManagementService with permission validation, AdminUserMessages provider, user management handlers with expel from channels (with permission validation and confirmation dialog), block placeholder for future implementation, Block button in all user detail tabs. All UAT gaps closed including role change confirmation callback data parsing fix and Interests tab MissingGreenlet error with eager loading. Permission model: admins cannot modify themselves, only super admin can modify other admins. Block/unblock requires DB migration for User.is_blocked field (Phase 10).
 - **Phase 10 (Free Channel Entry Flow):** Phase 10 COMPLETE - All 5 plans executed: Database extension (BotConfig social fields + ConfigService), UserFlowMessages with Lucien voice + social keyboard, handler integration, approval message with channel button, migration documentation. Social media buttons show in fixed order (IG → TikTok → X), no specific wait time mentioned (mystery approach), approval sends NEW message with "🚀 Acceder al canal" button. Setup script and README instructions for admin configuration.
-- **Phase 12 (Rediseño de Menú de Paquetes):** Phase 12 Plan 02 COMPLETE - Package detail view showing name, description, price, and category with "Me interesa" button. Callback handlers added to VIP and Free routers for user:packages:{id} pattern. Context-aware Lucien voice messages (VIP="círculo", Free="jardín"). Ready for interest confirmation flow (plan 03).
+- **Phase 12 (Rediseño de Menú de Paquetes):** Phase 12 Plan 01 COMPLETE - Minimalist package list with individual buttons, sorted by price (free first, then ascending). Callback pattern migrated to user:packages:{id}. Old _create_package_buttons() method removed. Detail view handler (user:packages:{id}) already exists from Plan 02. Ready for interest confirmation flow (plan 03).
 
 ### Quick Tasks Completed
 
@@ -223,6 +227,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Phase 12 Plan 02 COMPLETE - Package detail view with name, description, price, and category badges implemented. Callback handlers added to VIP and Free routers for user:packages:{id} pattern. Context-aware Lucien voice messages working.
+Stopped at: Phase 12 Plan 01 COMPLETE - Package list redesigned with minimalist format, sorting by price, and new callback pattern user:packages:{id}. All 4 tasks completed in ~5 minutes.
 Resume file: None
-Next phase: Phase 12 Plan 03 (Interest Confirmation with Contact Buttons)
+Next phase: Phase 12 Plan 02 (Package Detail View - already complete)
