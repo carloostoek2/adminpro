@@ -321,6 +321,9 @@ class SubscriptionService:
         NUEVO: Usado por el flujo de deep link para activar automáticamente
         la suscripción sin pasar por el flujo de canje manual.
 
+        Phase 13: Inicializa vip_entry_stage=1 para nuevos suscriptores,
+        iniciando el flujo ritualizado de entrada en 3 etapas.
+
         Args:
             user_id: ID del usuario que activa
             token_id: ID del token a usar
@@ -332,7 +335,10 @@ class SubscriptionService:
         Raises:
             ValueError: Si el usuario ya es VIP o token inválido
         """
-        # Verificar si usuario ya es VIP
+        # Calculate expiry
+        expiry_date = datetime.utcnow() + timedelta(hours=duration_hours)
+
+        # Check if subscriber already exists (renewal)
         result = await self.session.execute(
             select(VIPSubscriber).where(
                 VIPSubscriber.user_id == user_id
@@ -341,7 +347,7 @@ class SubscriptionService:
         existing_subscriber = result.scalar_one_or_none()
 
         if existing_subscriber:
-            # Usuario ya es VIP: extender suscripción
+            # Renew existing subscription
             extension = timedelta(hours=duration_hours)
 
             # Si ya expiró, partir desde ahora
@@ -352,33 +358,31 @@ class SubscriptionService:
                 existing_subscriber.expiry_date += extension
 
             existing_subscriber.status = "active"
+            existing_subscriber.token_id = token_id
 
-            # No commit - dejar que el handler maneje la transacción
+            # Phase 13: Reset entry stage if expired, otherwise keep NULL (completed)
+            if existing_subscriber.vip_entry_stage is not None:
+                existing_subscriber.vip_entry_stage = 1  # Restart ritual
+
+            subscriber = existing_subscriber
             logger.info(
-                f"✅ Suscripción VIP extendida vía deep link: user {user_id} "
-                f"(nueva expiración: {existing_subscriber.expiry_date})"
+                f"🔄 Suscripción VIP renovada para user {user_id} "
+                f"(stage={subscriber.vip_entry_stage})"
             )
-
-            return existing_subscriber
-
-        # Usuario nuevo: crear suscripción
-        expiry_date = datetime.utcnow() + timedelta(hours=duration_hours)
-
-        subscriber = VIPSubscriber(
-            user_id=user_id,
-            join_date=datetime.utcnow(),
-            expiry_date=expiry_date,
-            status="active",
-            token_id=token_id
-        )
-
-        self.session.add(subscriber)
-        # No commit - dejar que el handler maneje la transacción
-
-        logger.info(
-            f"✅ Nuevo suscriptor VIP vía deep link: user {user_id} "
-            f"(expira: {expiry_date})"
-        )
+        else:
+            # Create new subscription with vip_entry_stage=1
+            subscriber = VIPSubscriber(
+                user_id=user_id,
+                token_id=token_id,
+                join_date=datetime.utcnow(),
+                expiry_date=expiry_date,
+                status="active",
+                vip_entry_stage=1  # Phase 13: Start ritual at stage 1
+            )
+            self.session.add(subscriber)
+            logger.info(
+                f"✅ Nueva suscripción VIP creada para user {user_id} (stage=1)"
+            )
 
         return subscriber
 
