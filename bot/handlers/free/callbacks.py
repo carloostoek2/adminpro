@@ -30,6 +30,39 @@ free_callbacks_router = Router()
 free_callbacks_router.callback_query.middleware(DatabaseMiddleware())
 
 
+# Register SPECIFIC handlers BEFORE GENERIC ones to avoid pattern matching conflicts
+# "user:packages:back" must be registered before "user:packages:{id}"
+
+@free_callbacks_router.callback_query(lambda c: c.data == "user:packages:back")
+async def handle_packages_back_to_list(callback: CallbackQuery, container):
+    """
+    Vuelve al listado de paquetes Free (desde vista de detalle o confirmación).
+
+    Reutiliza handle_free_content() para consistencia.
+
+    Args:
+        callback: CallbackQuery de Telegram
+        container: ServiceContainer inyectado por middleware
+    """
+    await handle_free_content(callback, container)
+
+
+@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:packages:back:"))
+async def handle_packages_back_with_role(callback: CallbackQuery, container):
+    """
+    Vuelve al listado de paquetes desde confirmación de interés (con user_role).
+
+    Callback data format: "user:packages:back:{user_role}"
+
+    Ignora el user_role y siempre vuelve al listado Free (router Free).
+
+    Args:
+        callback: CallbackQuery de Telegram
+        container: ServiceContainer inyectado por middleware
+    """
+    await handle_free_content(callback, container)
+
+
 @free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:packages:"))
 async def handle_package_detail(callback: CallbackQuery, container):
     """
@@ -164,7 +197,7 @@ async def handle_package_interest_confirm(callback: CallbackQuery, container):
                 logger.warning(f"No se pudo obtener contexto de sesión para {user.id}: {e}")
 
             # Generate confirmation message with contact button
-            text, keyboard = container.message.user.flow.package_interest_confirmation(
+            text, keyboard = container.message.user.flows.package_interest_confirmation(
                 user_name=user.first_name or "Usuario",
                 package_name=package.name,
                 user_role="Free",
@@ -593,36 +626,6 @@ async def _send_admin_interest_notification(
 
     except Exception as e:
         logger.error(f"Error sending admin interest notification: {e}", exc_info=True)
-
-
-@free_callbacks_router.callback_query(lambda c: c.data == "user:packages:back")
-async def handle_packages_back_to_list(callback: CallbackQuery, container):
-    """
-    Vuelve al listado de paquetes Free (desde vista de detalle o confirmación).
-
-    Reutiliza handle_free_content() para consistencia.
-
-    Args:
-        callback: CallbackQuery de Telegram
-        container: ServiceContainer inyectado por middleware
-    """
-    await handle_free_content(callback, container)
-
-
-@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:packages:back:"))
-async def handle_packages_back_with_role(callback: CallbackQuery, container):
-    """
-    Vuelve al listado de paquetes desde confirmación de interés (con user_role).
-
-    Callback data format: "user:packages:back:{user_role}"
-
-    Ignora el user_role y siempre vuelve al listado Free (router Free).
-
-    Args:
-        callback: CallbackQuery de Telegram
-        container: ServiceContainer inyectado por middleware
-    """
-    await handle_free_content(callback, container)
 
 
 @free_callbacks_router.callback_query(lambda c: c.data == "menu:free:main")

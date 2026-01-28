@@ -74,6 +74,39 @@ async def handle_vip_premium(callback: CallbackQuery, container):
         await callback.answer("⚠️ Error cargando contenido premium", show_alert=True)
 
 
+# Register SPECIFIC handlers BEFORE GENERIC ones to avoid pattern matching conflicts
+# "user:packages:back" must be registered before "user:packages:{id}"
+
+@vip_callbacks_router.callback_query(lambda c: c.data == "user:packages:back")
+async def handle_packages_back_to_list(callback: CallbackQuery, container):
+    """
+    Vuelve al listado de paquetes VIP (desde vista de detalle o confirmación).
+
+    Reutiliza handle_vip_premium() para consistencia.
+
+    Args:
+        callback: CallbackQuery de Telegram
+        container: ServiceContainer inyectado por middleware
+    """
+    await handle_vip_premium(callback, container)
+
+
+@vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:packages:back:"))
+async def handle_packages_back_with_role(callback: CallbackQuery, container):
+    """
+    Vuelve al listado de paquetes desde confirmación de interés (con user_role).
+
+    Callback data format: "user:packages:back:{user_role}"
+
+    Ignora el user_role y siempre vuelve al listado VIP (router VIP).
+
+    Args:
+        callback: CallbackQuery de Telegram
+        container: ServiceContainer inyectado por middleware
+    """
+    await handle_vip_premium(callback, container)
+
+
 @vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:packages:"))
 async def handle_package_detail(callback: CallbackQuery, container):
     """
@@ -200,7 +233,7 @@ async def handle_package_interest_confirm(callback: CallbackQuery, container):
             session_ctx = container.message.get_session_context(container)
 
             # Generate confirmation message with contact button
-            text, keyboard = container.message.user.flow.package_interest_confirmation(
+            text, keyboard = container.message.user.flows.package_interest_confirmation(
                 user_name=user.first_name or "Usuario",
                 package_name=package.name,
                 user_role="VIP",
@@ -525,36 +558,6 @@ async def _send_admin_interest_notification(
 
     except Exception as e:
         logger.error(f"Error sending admin interest notification: {e}", exc_info=True)
-
-
-@vip_callbacks_router.callback_query(lambda c: c.data == "user:packages:back")
-async def handle_packages_back_to_list(callback: CallbackQuery, container):
-    """
-    Vuelve al listado de paquetes VIP (desde vista de detalle o confirmación).
-
-    Reutiliza handle_vip_premium() para consistencia.
-
-    Args:
-        callback: CallbackQuery de Telegram
-        container: ServiceContainer inyectado por middleware
-    """
-    await handle_vip_premium(callback, container)
-
-
-@vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:packages:back:"))
-async def handle_packages_back_with_role(callback: CallbackQuery, container):
-    """
-    Vuelve al listado de paquetes desde confirmación de interés (con user_role).
-
-    Callback data format: "user:packages:back:{user_role}"
-
-    Ignora el user_role y siempre vuelve al listado VIP (router VIP).
-
-    Args:
-        callback: CallbackQuery de Telegram
-        container: ServiceContainer inyectado por middleware
-    """
-    await handle_vip_premium(callback, container)
 
 
 @vip_callbacks_router.callback_query(lambda c: c.data == "menu:vip:main")
