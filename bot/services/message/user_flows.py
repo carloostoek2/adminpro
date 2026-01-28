@@ -384,8 +384,9 @@ class UserFlowMessages(BaseMessageProvider):
             user_name: User's first name (optional, can be None)
             package_name: Name of the package they're interested in
             user_role: "VIP" or "Free" for navigation context
-            user_id: Optional user ID for session history (not used in this method)
-            session_history: Optional session history (not used in this method)
+        user_name: str,
+        package_name: str,
+        user_role: str = "VIP"
 
         Returns:
             Tuple of (text, keyboard) with contact and navigation buttons
