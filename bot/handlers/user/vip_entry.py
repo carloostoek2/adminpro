@@ -215,7 +215,7 @@ async def handle_vip_entry_stage_transition(
             # Log role change
             await container.role_change.log_role_change(
                 user_id=user_id,
-                old_role=old_role,
+                previous_role=old_role,
                 new_role=UserRole.VIP,
                 reason=RoleChangeReason.VIP_ENTRY_COMPLETED,
                 changed_by=0  # SYSTEM
@@ -226,13 +226,24 @@ async def handle_vip_entry_stage_transition(
                 f"(VIP entry flow completed)"
             )
 
-    # Show next stage
-    await show_vip_entry_stage(callback.message, container, target_stage, state)
+    # Edit message to show next stage (consistent with bot UX - edit, not delete+new)
+    provider = container.message.user.vip_entry
+    if target_stage == 2:
+        text, keyboard = provider.stage_2_expectation_alignment()
+    elif target_stage == 3:
+        # Generate invite link for Stage 3
+        invite_link = await service.create_24h_invite_link(user_id)
+        if not invite_link:
+            await callback.answer("❌ Error generando enlace", show_alert=True)
+            return
+        text, keyboard = provider.stage_3_access_delivery(invite_link.invite_link)
+    else:
+        await callback.answer("❌ Etapa inválida", show_alert=True)
+        return
 
-    # Delete previous stage message (clean up)
     try:
-        await callback.message.delete()
+        await callback.message.edit_text(text, reply_markup=keyboard)
     except Exception as e:
-        logger.warning(f"⚠️ Could not delete stage message: {e}")
+        logger.warning(f"⚠️ Could not edit stage message: {e}")
 
     await callback.answer()
