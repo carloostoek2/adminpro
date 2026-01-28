@@ -200,6 +200,11 @@ Recent decisions affecting current work:
 - [13-02-06]: VIPEntryFlowMessages integrated as UserMessages.vip_entry property - follows lazy-loading pattern consistent with user.start, user.flows, user.menu
 - [13-02-07]: Callback patterns: vip_entry:stage_2, vip_entry:stage_3 - sequential progression through 3-stage ritual
 - [13-02-08]: Stage 3 uses URL button (not callback) - direct link to VIP channel invite, no handler needed
+ - [13-04-01]: VIPEntryService follows existing service pattern - async methods, session injection via __init__, no session.commit() in service (handlers commit)
+- [13-04-02]: Stage validation prevents sequential skips - only allows advancement from stage 1 or 2, prevents race conditions with from_stage matching
+- [13-04-03]: Token generation uses secrets.token_urlsafe(48) for 64-character tokens with uniqueness verification and retry loop (10 attempts)
+- [13-04-04]: Expiry cancellation only affects incomplete flows (stages 1-2), does NOT cancel completed rituals (NULL) or token-ready stage (3)
+- [13-04-05]: Background task integration at SubscriptionService level - VIPEntryService.cancel_entry_on_expiry() called from expire_vip_subscribers() for each expired subscriber
 
 **Previous decisions:**
 - [v1.0]: Stateless architecture with session context passed as parameters instead of stored in __init__
@@ -247,6 +252,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Phase 13 Plan 03 COMPLETE - VIPEntryStates FSM group and handlers implemented. All 7 tasks completed in 8 minutes.
+Stopped at: Phase 13 Plan 04 COMPLETE - VIPEntryService with 6 core methods implemented. All 7 tasks completed in 7 minutes.
 Resume file: None
 Next phase: Phase 13 VERIFICATION (End-to-end testing of 3-stage ritual flow)
