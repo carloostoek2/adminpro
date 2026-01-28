@@ -235,7 +235,42 @@ class VIPEntryService:
         Returns:
             ChatInviteLink si se creó correctamente, None si error
         """
-        pass  # Implement in T4
+        # Get subscriber
+        result = await self.session.execute(
+            select(VIPSubscriber).where(VIPSubscriber.user_id == user_id)
+        )
+        subscriber = result.scalar_one_or_none()
+
+        if not subscriber:
+            logger.error(f"❌ VIPSubscriber not found for user {user_id}")
+            return None
+
+        # Get VIP channel ID from ConfigService
+        from bot.services.config import ConfigService
+        config_service = ConfigService(self.session)
+        vip_channel_id = await config_service.get_vip_channel_id()
+
+        if not vip_channel_id:
+            logger.error("❌ VIP channel not configured")
+            return None
+
+        # Create invite link via SubscriptionService
+        try:
+            invite_link = await self.subscription.create_invite_link(
+                channel_id=vip_channel_id,
+                user_id=user_id,
+                expire_hours=24  # 24-hour validity
+            )
+
+            # Update invite_link_sent_at timestamp
+            subscriber.invite_link_sent_at = datetime.utcnow()
+
+            logger.info(f"✅ 24h invite link created for user {user_id}")
+            return invite_link
+
+        except Exception as e:
+            logger.error(f"❌ Error creating invite link for user {user_id}: {e}")
+            return None
 
     # ===== EXPIRY CANCELLATION =====
 
