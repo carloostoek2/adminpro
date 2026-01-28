@@ -243,6 +243,7 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 001 | Fix Phase 5 gaps | 2026-01-25 | 9b82088 | [001-fix-phase-5-gaps](./quick/001-fix-phase-5-gaps/) |
+| 002 | Eliminar botón de salir de la navegación general del bot | 2026-01-28 | f432f3b | [002-eliminar-bot-n-de-salir-de-la-navegaci-n](./quick/002-eliminar-bot-n-de-salir-de-la-navegaci-n/) |
 
 ### Roadmap Evolution
 
