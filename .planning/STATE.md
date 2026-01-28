@@ -5,13 +5,13 @@
 See: .planning/PROJECT.md (updated 2026-01-25)
 
 **Core value:** Cada usuario recibe una experiencia de menú personalizada según su rol (Admin/VIP/Free), con la voz consistente de Lucien y opciones relevantes a su contexto.
-**Current focus:** Phase 13 (VIP Ritualized Entry Flow) - 🔄 IN PROGRESS
+**Current focus:** Phase 13 (VIP Ritualized Entry Flow) - ✅ COMPLETE
 
 ## Current Position
 
-Phase: 13 of 13 (VIP Ritualized Entry Flow) - 🔄 IN PROGRESS
-Plan: 03 of 4 (VIP Entry FSM States and Handlers) - ✅ COMPLETE
-Status: Phase 13 Plan 03 COMPLETE - VIPEntryStates FSM group created with 3 states (stage_1_confirmation, stage_2_alignment, stage_3_delivery). VIPEntryService integrated with 6 core methods. VIP entry handler module created with stage transition callbacks. /start handler modified to check vip_entry_stage and route to entry flow (no immediate VIP link). VIP menu handler redirects incomplete entry flow to show_vip_entry_stage(). vip_entry_router registered in main dispatcher. All 7 tasks completed in 8 minutes. Verification passed (9/9 must-haves). (2026-01-28)
+Phase: 13 of 13 (VIP Ritualized Entry Flow) - ✅ COMPLETE
+Plan: 04 of 4 (VIP Entry Service) - ✅ COMPLETE
+Status: Phase 13 COMPLETE - 3-stage ritual VIP entry flow implemented. Database extended with vip_entry_stage, vip_entry_token, invite_link_sent_at fields. VIPEntryFlowMessages provider with Lucien voice (mystery → intimacy → dramatic). VIPEntryService with stage validation, 64-char token generation, 24h invite links. VIP entry handlers with /start routing, VIP menu redirect, expiry cancellation. All 4 plans executed in 2 waves. Verification passed (8/8 must-haves). (2026-01-28)
 
 Progress: ██████████ 100% (51/51 plans complete)
 
@@ -236,7 +236,7 @@ None.
 - **Phase 9 (User Management Features):** Phase 9 COMPLETE - UserManagementService with permission validation, AdminUserMessages provider, user management handlers with expel from channels (with permission validation and confirmation dialog), block placeholder for future implementation, Block button in all user detail tabs. All UAT gaps closed including role change confirmation callback data parsing fix and Interests tab MissingGreenlet error with eager loading. Permission model: admins cannot modify themselves, only super admin can modify other admins. Block/unblock requires DB migration for User.is_blocked field (Phase 10).
 - **Phase 10 (Free Channel Entry Flow):** Phase 10 COMPLETE - All 5 plans executed: Database extension (BotConfig social fields + ConfigService), UserFlowMessages with Lucien voice + social keyboard, handler integration, approval message with channel button, migration documentation. Social media buttons show in fixed order (IG → TikTok → X), no specific wait time mentioned (mystery approach), approval sends NEW message with "🚀 Acceder al canal" button. Setup script and README instructions for admin configuration.
 - **Phase 12 (Rediseño de Menú de Paquetes):** Phase 12 COMPLETE - All 4 plans executed in 2 waves. Package menu redesigned with minimalist list (name only buttons), detail view (full package info + "Me interesa"), warm confirmation message (Diana's voice + tg://resolve contact link), and complete circular navigation (list ↔ detail ↔ confirmation → list/main). Verification passed (4/4 must-haves).
-- **Phase 13 (VIP Ritualized Entry Flow):** Phase 13 Plan 01 COMPLETE - VIPSubscriber model extended with vip_entry_stage (Integer, default=1, indexed), vip_entry_token (String(64), unique, nullable), and invite_link_sent_at (DateTime, nullable). activate_vip_subscription() initializes stage=1 for new subscribers, preserves NULL for completed rituals, resets to 1 for expired renewals. Migration documentation created with automatic (SQLAlchemy) and manual SQL options. Backward compatibility: existing active subscribers get vip_entry_stage=NULL (skip ritual). Ready for Plan 02 (Messages Provider) or Plan 03 (FSM States and Handlers).
+- **Phase 13 (VIP Ritualized Entry Flow):** Phase 13 COMPLETE - All 4 plans executed in 2 waves. Database extended with vip_entry_stage, vip_entry_token, invite_link_sent_at fields. VIPEntryFlowMessages provider with Lucien voice for 3-stage ritual (mystery → intimacy → dramatic). VIPEntryService with stage validation, 64-char token generation, 24h invite links. VIP entry handlers with /start routing, VIP menu redirect, expiry cancellation. UserRole changes to VIP only after Stage 3 completion. Verification passed (8/8 must-haves).
 
 ### Quick Tasks Completed
 
@@ -252,6 +252,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Phase 13 Plan 04 COMPLETE - VIPEntryService with 6 core methods implemented. All 7 tasks completed in 7 minutes.
+Stopped at: Phase 13 COMPLETE - All 4 plans executed. 3-stage ritual VIP entry flow implemented with database fields, Lucien-voiced messages, stage validation, token generation, and expiry cancellation. Verification passed (8/8 must-haves). v1.1 milestone at 70% (50/76 requirements complete).
 Resume file: None
-Next phase: Phase 13 VERIFICATION (End-to-end testing of 3-stage ritual flow)
+Next phase: Phase 11 (Documentation) - remaining phase in v1.1 milestone
