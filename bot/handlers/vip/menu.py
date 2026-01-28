@@ -61,7 +61,9 @@ async def show_vip_menu(message: Message, data: Dict[str, Any]):
     if container:
         try:
             subscriber = await container.subscription.get_vip_subscriber(user.id)
-            if subscriber and subscriber.expiry_date:
+            if subscriber:
+                # Always pass expiry_date (even if expired or None)
+                # The greeting will handle expired dates appropriately
                 vip_expires_at = subscriber.expiry_date
         except Exception as e:
             logger.error(f"Error obteniendo info VIP para {user.id}: {e}")
