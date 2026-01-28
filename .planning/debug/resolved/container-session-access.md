@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: resolved
 trigger: "Fix AttributeError: 'ServiceContainer' object has no attribute 'session'"
 created: 2026-01-27T00:00:00Z
 updated: 2026-01-27T00:00:00Z
@@ -35,8 +35,9 @@ started: Occurred after commit 2c5e62b applied role detection fixes
 
 ## Resolution
 
-root_cause: Code tries to manually instantiate RoleDetectionService using non-existent container.session property instead of using container.role_detection
-fix: Replace manual instantiation with container.role_detection property access
-verification: Will test /start command after fix
+root_cause: Code tried to manually instantiate RoleDetectionService using non-existent container.session property instead of using container.role_detection
+fix: Replaced manual instantiation with container.role_detection property access, removed unnecessary import
+verification: Python syntax check passed, fix committed
 files_changed:
-  - bot/handlers/user/start.py: Line 283-285
+  - bot/handlers/user/start.py: Lines 281-284 (removed import, used container property)
+commit: d6f9cbb
