@@ -291,8 +291,8 @@ async def handle_vip_status(callback: CallbackQuery, container):
         # Get VIP subscription info
         subscriber = await container.subscription.get_vip_subscriber(user.id)
 
-        if subscriber and subscriber.expires_at:
-            expiry_date = subscriber.expires_at.strftime("%d de %B de %Y")
+        if subscriber and subscriber.expiry_date:
+            expiry_date = subscriber.expiry_date.strftime("%d de %B de %Y")
             status_text = (
                 f"🎩 <b>Lucien:</b>\n\n"
                 f"<i>El estado de su membresía en el círculo exclusivo...</i>\n\n"
