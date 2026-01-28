@@ -264,14 +264,20 @@ async def handle_vip_entry_main_menu(
     """
     user_id = callback.from_user.id  # CallbackQuery uses from_user, not chat
 
+    # Create container first (needed for both operations)
+    container = ServiceContainer(session, callback.bot)
+
+    # Mark ritual as completed by setting vip_entry_stage = NULL
+    subscriber = await container.subscription.get_vip_subscriber(user_id)
+    if subscriber and subscriber.vip_entry_stage is not None:
+        subscriber.vip_entry_stage = None  # Ritual completed
+        logger.info(f"✅ User {user_id} VIP entry ritual marked as completed")
+
     # Clear FSM state
     await state.clear()
 
     # Import and call the start handler to show main menu
     from bot.handlers.user.start import _send_welcome_message
-    from bot.services.container import ServiceContainer
-
-    container = ServiceContainer(session, callback.bot)
 
     logger.info(f"✅ User {user_id} returning to main menu after VIP entry completion")
 
