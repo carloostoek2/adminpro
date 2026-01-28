@@ -244,6 +244,7 @@ None.
 |---|-------------|------|--------|-----------|
 | 001 | Fix Phase 5 gaps | 2026-01-25 | 9b82088 | [001-fix-phase-5-gaps](./quick/001-fix-phase-5-gaps/) |
 | 002 | Eliminar botón de salir de la navegación general del bot | 2026-01-28 | f432f3b | [002-eliminar-bot-n-de-salir-de-la-navegaci-n](./quick/002-eliminar-bot-n-de-salir-de-la-navegaci-n/) |
+| 003 | Completar eliminación de botón de salir en create_content_with_navigation | 2026-01-28 | a9b8261 | [003-eliminar-boton-de-salir-de-la-navegacion](./quick/003-eliminar-boton-de-salir-de-la-navegacion/) |
 
 ### Roadmap Evolution
 
