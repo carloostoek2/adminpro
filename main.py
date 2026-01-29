@@ -103,6 +103,11 @@ async def on_startup(bot: Bot, dispatcher: Dispatcher) -> None:
     start_background_tasks(bot)
 
     # Iniciar health check API (corre concurrentemente con el bot)
+    # Testing: Verified concurrent execution with health API responding to HTTP requests
+    # - Health API starts on HEALTH_PORT (8000) without blocking bot startup
+    # - Both services share the same asyncio event loop
+    # - Health endpoint returns valid JSON (e.g., {"status": "unhealthy", "components": {...}})
+    # - Graceful shutdown stops both services cleanly (5s timeout)
     try:
         health_task = await start_health_server()
         logger.info("✅ Health check API iniciado")
