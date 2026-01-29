@@ -3,38 +3,61 @@ Pytest Configuration and Shared Fixtures.
 
 Proporciona fixtures comunes para todos los tests:
 - mock_bot: Mock del bot de Telegram
+- db_session: Database session for tests
+
+Configured for pytest-asyncio with asyncio_mode=auto (no decorators needed).
 """
 import pytest
 import asyncio
 from unittest.mock import AsyncMock, Mock
 
+from bot.database.engine import get_session
 from bot.database import init_db, close_db
 
 
-@pytest.fixture
-def event_loop():
+@pytest.fixture(scope="session")
+def event_loop_policy():
     """
-    Fixture: Event loop para tests async.
+    Override event loop policy for the test session.
+
+    Modern pytest-asyncio pattern for session-scoped event loop configuration.
     """
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    yield loop
-    loop.close()
+    return asyncio.get_event_loop_policy()
 
 
-# Hook para inicializar BD antes de cada test async
 @pytest.fixture(autouse=True)
-def db_setup(event_loop):
+async def db_setup():
     """
-    Setup BD antes de cada test.
+    Setup database before each test and cleanup after.
+
+    Uses modern async fixture pattern compatible with pytest-asyncio auto mode.
+    Automatically initializes and closes database for each test.
     """
-    # Ejecutar init_db antes del test
-    event_loop.run_until_complete(init_db())
+    # Initialize database before test
+    await init_db()
 
     yield
 
-    # Limpiar BD despues del test
-    event_loop.run_until_complete(close_db())
+    # Cleanup database after test
+    await close_db()
+
+
+@pytest.fixture
+async def db_session():
+    """
+    Fixture: Provides a database session for tests.
+
+    Yields an async database session that is automatically committed/rolled back.
+    Use this for tests that need direct database access.
+
+    Example:
+        async def test_user_creation(db_session):
+            user = User(name="test")
+            db_session.add(user)
+            await db_session.commit()
+    """
+    async with get_session() as session:
+        yield session
 
 
 @pytest.fixture
