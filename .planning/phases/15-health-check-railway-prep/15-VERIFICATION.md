@@ -106,6 +106,12 @@ None. All automated checks passed with clear evidence in code.
 - ✅ Fix committed in dc0dbfd: Reduced timeouts from 150s to 10s
 - ✅ UAT summary confirms: "Ctrl+C → Bot stops in 1-2 seconds", "No orphaned processes", "Immediate restart works"
 
+**Additional fixes applied:**
+- ✅ f74ec1c: Improved health API shutdown and port handling
+- ✅ 7493fb3: SO_REUSEADDR for TIME_WAIT port state
+- ✅ 8f10ed5: Simplified health runner with retry logic
+- ✅ Health API now handles port conflicts gracefully with 3 retry attempts
+
 ### Gaps Summary
 
 **No gaps found.** Phase 15 successfully implemented all required features:
