@@ -242,9 +242,13 @@ async def on_shutdown(bot: Bot, dispatcher: Dispatcher) -> None:
         logger.info("🛑 Deteniendo health check API...")
         health_task.cancel()
         try:
-            await asyncio.wait_for(health_task, timeout=5)
-        except (asyncio.CancelledError, asyncio.TimeoutError):
+            # Esperar más tiempo para que el finally block del runner cierre el socket
+            await asyncio.wait_for(health_task, timeout=8)
+            logger.info("✅ Health API detenida correctamente")
+        except asyncio.TimeoutError:
             logger.warning("⚠️ Health API no respondió a shutdown (timeout)")
+        except asyncio.CancelledError:
+            logger.info("✅ Health API cancelada")
         except Exception as e:
             logger.warning(f"⚠️ Error deteniendo health API: {e}")
 
