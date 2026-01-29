@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Consistencia absoluta en la voz de Lucien: cada mensaje del bot debe sonar elegante, misterioso y natural viniendo del mayordomo, sin importar que handler o flujo lo invoque.
-**Current focus:** Phase 15 - Health Check & Railway Preparation
+**Current focus:** Phase 16 complete - Moving to Phase 17 (System Tests)
 
 ## Current Position
 
 Phase: 16 of 18 (Testing Infrastructure)
-Plan: 3 of 5 in current phase
-Status: In progress - In-memory database configured
-Last activity: 2026-01-29 — Plan 16-03 completed (In-Memory Database)
+Plan: 5 of 5 in current phase
+Status: Phase complete, all goals verified
+Last activity: 2026-01-29 — Phase 16 completed (Testing Infrastructure)
 
-Progress: [██████████████░░░░] 89%
+Progress: [████████████████░░░░] 91%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 57
+- Total plans completed: 62
 - Average duration: ~10.6 min
-- Total execution time: ~14.5 hours
+- Total execution time: ~15.5 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [██████████████░░░░] 89%
 | v1.1 (Phases 5-13) | 48 | ~10.2 hours | ~12.8 min |
 | v1.2 (Phase 14) | 4 | ~25 min | ~6.3 min |
 | v1.2 (Phase 15) | 5 | ~35 min | ~7.0 min |
+| v1.2 (Phase 16) | 5 | ~2 hours | ~24 min |
 
 **Recent Trend:**
-- Last 5 plans: Phase 15 complete (Health Check & Railway Preparation)
-- Phase 16 started: Testing Infrastructure
-- Trend: Stable
+- Last 5 plans: Phase 16 complete (Testing Infrastructure)
+- Trend: Stable with comprehensive test infrastructure
 
 ## Accumulated Context
 
@@ -96,7 +96,6 @@ See PROJECT.md Key Decisions table for full decision log.
 - Phase 16-05: Coverage exclusions for tests, migrations, venv, scripts configured
 - Phase 16-05: HTML and XML coverage reports supported
 - Phase 16-05: scripts/coverage.py helper for convenient coverage runs
-- Phase 16: pytest-asyncio with in-memory SQLite for test isolation
 - Phase 17: Comprehensive test coverage for all critical flows
 - Phase 18: Admin test runner for non-technical users
 - Phase 18: Performance profiling with pyinstrument for bottleneck identification
@@ -135,10 +134,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-29 (Phase 16 execution)
-Stopped at: Completed Plan 16-03 (In-Memory Database)
-Resume file: .planning/phases/16-testing-infrastructure/16-03-SUMMARY.md
-Next: Continue Phase 16 - Remaining testing infrastructure plans (16-04, 16-05)
+Stopped at: Completed Phase 16 (Testing Infrastructure)
+Resume file: None
+Next: Move to Phase 17 (System Tests)
 
 ---
 
-*State updated: 2026-01-29 after Plan 16-03 completion*
+*State updated: 2026-01-29 after Phase 16 completion*
