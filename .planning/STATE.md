@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 15 of 18 (Health Check & Railway Preparation)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-01-29 — Completed Plan 15-03 (Railway.toml and Dockerfile Configuration)
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-01-29 — Completed Plan 15-04 (Environment Variable Validation and Webhook/Polling Mode Switching)
 
-Progress: [█████████████░░░░░░] 88%
+Progress: [██████████████░░░░░] 91%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 54
-- Average duration: ~11.1 min
-- Total execution time: ~13.0 hours
+- Total plans completed: 58
+- Average duration: ~10.9 min
+- Total execution time: ~13.9 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [█████████████░░░░░░] 88%
 | v1.0 (Phases 1-4) | 14 | ~2 hours | ~8.6 min |
 | v1.1 (Phases 5-13) | 48 | ~10.2 hours | ~12.8 min |
 | v1.2 (Phase 14) | 4 | ~25 min | ~6.3 min |
-| v1.2 (Phase 15) | 3 | ~18 min | ~6.0 min |
+| v1.2 (Phase 15) | 4 | ~24 min | ~6.0 min |
 
 **Recent Trend:**
-- Last 5 plans: Phase 15-03 completed (Railway.toml and Dockerfile Configuration)
+- Last 5 plans: Phase 15 complete (Health Check & Railway Preparation)
 - Trend: Stable
 
 ## Accumulated Context
@@ -68,6 +68,12 @@ See PROJECT.md Key Decisions table for full decision log.
 - Phase 15-03: Multi-stage Docker build with non-root user for security (15-03 complete)
 - Phase 15-03: Health check timeout of 300s allows time for DB migrations on Railway (15-03 complete)
 - Phase 15-03: .dockerignore for optimized Docker builds excluding dev artifacts (15-03 complete)
+- Phase 15-04: WEBHOOK_MODE defaults to "polling" for local development (no breaking changes)
+- Phase 15-04: validate_required_vars() returns (is_valid, missing_vars) tuple for detailed error reporting
+- Phase 15-04: WEBHOOK_SECRET is optional but logged as warning when missing in webhook mode (15-04 complete)
+- Phase 15-04: Health check API works independently of bot mode (starts in both polling and webhook)
+- Phase 15-04: Environment variable validation with clear error messages for missing/invalid variables
+- Phase 15-04: Webhook/polling mode switching infrastructure in place (15-04 complete)
 - Phase 16: pytest-asyncio with in-memory SQLite for test isolation
 - Phase 17: Comprehensive test coverage for all critical flows
 - Phase 18: Admin test runner for non-technical users
@@ -107,10 +113,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-29 (Phase 15 execution)
-Stopped at: Completed Plan 15-03 (Railway.toml and Dockerfile Configuration)
+Stopped at: Completed Plan 15-04 (Environment Variable Validation and Webhook/Polling Mode Switching)
 Resume file: None
-Next: Execute Plan 15-04 (if exists) or move to Phase 16
+Next: Move to Phase 16 (Testing) or begin Railway deployment
 
 ---
 
-*State updated: 2026-01-29 after Plan 15-03 completion*
+*State updated: 2026-01-29 after Plan 15-04 completion (Phase 15 complete)*
