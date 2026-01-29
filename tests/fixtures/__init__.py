@@ -1,0 +1,15 @@
+"""
+Test fixtures package.
+
+Import all fixtures to make them available via conftest.py.
+"""
+from tests.fixtures.database import test_db, test_session
+from tests.fixtures.services import mock_bot, container, container_with_preload
+
+__all__ = [
+    "test_db",
+    "test_session",
+    "mock_bot",
+    "container",
+    "container_with_preload",
+]

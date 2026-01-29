@@ -2,14 +2,25 @@
 Pytest Configuration and Shared Fixtures.
 
 Proporciona fixtures comunes para todos los tests:
+- test_db: Isolated in-memory database
+- test_session: Active database session
 - mock_bot: Mock del bot de Telegram
-- db_session: Database session for tests
-
-Configured for pytest-asyncio with asyncio_mode=auto (no decorators needed).
+- container: ServiceContainer with dependencies
+- container_with_preload: Container with services preloaded
+- Semantic assertion fixtures for voice validation
 """
 import pytest
 import asyncio
 from unittest.mock import AsyncMock, Mock
+
+# Import all fixtures from the fixtures package
+from tests.fixtures import (
+    test_db,
+    test_session,
+    mock_bot,
+    container,
+    container_with_preload,
+)
 
 from bot.database.engine import get_session
 from bot.database import init_db, close_db
@@ -58,33 +69,6 @@ async def db_session():
     """
     async with get_session() as session:
         yield session
-
-
-@pytest.fixture
-def mock_bot():
-    """
-    Fixture: Mock del bot de Telegram.
-
-    Proporciona mock de métodos Telegram API necesarios:
-    - get_chat
-    - get_chat_member
-    - create_chat_invite_link
-    - ban_chat_member
-    - unban_chat_member
-    - send_message
-    """
-    bot = Mock()
-    bot.id = 123456789
-
-    # Mock de métodos necesarios (retornan AsyncMock)
-    bot.get_chat = AsyncMock()
-    bot.get_chat_member = AsyncMock()
-    bot.create_chat_invite_link = AsyncMock()
-    bot.ban_chat_member = AsyncMock()
-    bot.unban_chat_member = AsyncMock()
-    bot.send_message = AsyncMock()
-
-    return bot
 
 
 # ============================================================================
