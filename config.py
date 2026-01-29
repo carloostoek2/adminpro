@@ -121,6 +121,35 @@ class Config:
     HEALTH_HOST: str = os.getenv("HEALTH_HOST", "0.0.0.0")
 
     @classmethod
+    def validate_required_vars(cls) -> tuple[bool, list[str]]:
+        """
+        Valida que TODAS las variables de entorno requeridas estén configuradas.
+
+        Returns:
+            Tuple de (is_valid, missing_vars)
+            - is_valid: True si todas las variables requeridas están presentes
+            - missing_vars: Lista de nombres de variables faltantes
+        """
+        required_vars = {
+            "BOT_TOKEN": cls.BOT_TOKEN,
+            "DATABASE_URL": cls.DATABASE_URL,
+        }
+
+        # Validar que Admin IDs estén configurados
+        cls.load_admin_ids()
+        if not cls.ADMIN_USER_IDS:
+            required_vars["ADMIN_USER_IDS"] = None
+
+        missing = [name for name, value in required_vars.items() if not value]
+
+        if missing:
+            logger.error(f"❌ Variables requeridas faltantes: {', '.join(missing)}")
+            return False, missing
+
+        logger.info("✅ Todas las variables requeridas están configuradas")
+        return True, []
+
+    @classmethod
     def validate_database_url(cls) -> bool:
         """
         Valida que DATABASE_URL tiene un formato soportado.
@@ -178,21 +207,17 @@ class Config:
         """
         errors = []
 
-        # Validar BOT_TOKEN
-        if not cls.BOT_TOKEN:
-            errors.append("BOT_TOKEN no configurado en .env")
-        elif len(cls.BOT_TOKEN) < 20:
+        # Validar variables requeridas
+        is_valid, missing = cls.validate_required_vars()
+        if not is_valid:
+            errors.append(f"Faltan variables requeridas: {', '.join(missing)}")
+
+        # Validar formato de BOT_TOKEN
+        if cls.BOT_TOKEN and len(cls.BOT_TOKEN) < 20:
             errors.append("BOT_TOKEN parece inválido (muy corto)")
 
-        # Validar ADMIN_USER_IDS
-        cls.load_admin_ids()
-        if not cls.ADMIN_USER_IDS:
-            errors.append("ADMIN_USER_IDS no configurado o inválido en .env")
-
         # Validar DATABASE_URL
-        if not cls.DATABASE_URL:
-            errors.append("DATABASE_URL no configurado")
-        elif not cls.validate_database_url():
+        if cls.DATABASE_URL and not cls.validate_database_url():
             errors.append("DATABASE_URL tiene formato inválido")
 
         # Validar DEFAULT_WAIT_TIME_MINUTES
