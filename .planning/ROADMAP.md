@@ -128,12 +128,14 @@ Plans:
   3. Base de datos en memoria se crea y limpia automáticamente entre tests
   4. Tests están aislados (cleanup completo entre tests)
   5. Coverage reporting configurado para medir cobertura de código
-**Plans**: 3 plans
+**Plans**: 5 plans
 
 Plans:
-- [ ] 16-01: pytest-asyncio configuration and test structure
-- [ ] 16-02: Test fixtures (test_db, mock_bot, container)
-- [ ] 16-03: In-memory database and test isolation
+- [ ] 16-01: pytest-asyncio configuration with async_mode=auto
+- [ ] 16-02: Core test fixtures (test_db, mock_bot, container)
+- [ ] 16-03: In-memory database setup with automatic cleanup
+- [ ] 16-04: Test isolation with transaction rollback
+- [ ] 16-05: Coverage reporting configuration
 
 #### Phase 17: System Tests
 **Goal**: Comprehensive test coverage for critical flows and message providers
