@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 16 of 18 (Testing Infrastructure)
-Plan: 2 of 5 in current phase
-Status: In progress - Core test fixtures documented
-Last activity: 2026-01-29 — Plan 16-02 completed (Core Test Fixtures)
+Plan: 4 of 5 in current phase
+Status: In progress - Test isolation complete
+Last activity: 2026-01-29 — Plan 16-04 completed (Test Isolation)
 
-Progress: [███████████████░░░] 91%
+Progress: [███████████████░░░] 92%
 
 ## Performance Metrics
 
@@ -85,6 +85,9 @@ See PROJECT.md Key Decisions table for full decision log.
 - Phase 16-02: Core test fixtures created (test_db, mock_bot, container, container_with_preload)
 - Phase 16-02: In-memory SQLite for isolated test databases
 - Phase 16-02: ServiceContainer fixture with dependency injection for tests
+- Phase 16-04: Transaction rollback isolation between tests (session.rollback())
+- Phase 16-04: 27 isolation verification tests (test_isolation.py, test_cleanup.py)
+- Phase 16-04: BotConfig singleton modifications properly rolled back between tests
 - Phase 16-05: Coverage reporting configured with pytest-cov and .coveragerc
 - Phase 16-05: Branch coverage enabled for thorough measurement
 - Phase 16-05: Coverage exclusions for tests, migrations, venv, scripts configured
@@ -129,10 +132,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-29 (Phase 16 execution)
-Stopped at: Completed Plan 16-02 (Core Test Fixtures)
-Resume file: None
-Next: Continue Phase 16 - Additional testing infrastructure plans
+Stopped at: Completed Plan 16-04 (Test Isolation)
+Resume file: .planning/phases/16-testing-infrastructure/16-04-SUMMARY.md
+Next: Continue Phase 16 - Remaining testing infrastructure plans (16-03, 16-05)
 
 ---
 
-*State updated: 2026-01-29 after Plan 16-02 completion*
+*State updated: 2026-01-29 after Plan 16-04 completion*
