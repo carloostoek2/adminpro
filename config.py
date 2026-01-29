@@ -84,6 +84,23 @@ class Config:
     )
 
     @classmethod
+    def validate_database_url(cls) -> bool:
+        """
+        Valida que DATABASE_URL tiene un formato soportado.
+
+        Returns:
+            True si el formato es válido, False en caso contrario
+        """
+        try:
+            from bot.database.dialect import parse_database_url
+            dialect, _ = parse_database_url(cls.DATABASE_URL)
+            logger.info(f"✅ DATABASE_URL dialect detectado: {dialect.value}")
+            return True
+        except ValueError as e:
+            logger.error(f"❌ DATABASE_URL inválido: {e}")
+            return False
+
+    @classmethod
     def load_admin_ids(cls):
         """
         Carga y parsea los IDs de administradores desde ADMIN_USER_IDS.
@@ -137,6 +154,8 @@ class Config:
         # Validar DATABASE_URL
         if not cls.DATABASE_URL:
             errors.append("DATABASE_URL no configurado")
+        elif not cls.validate_database_url():
+            errors.append("DATABASE_URL tiene formato inválido")
 
         # Validar DEFAULT_WAIT_TIME_MINUTES
         if cls.DEFAULT_WAIT_TIME_MINUTES < 1:
