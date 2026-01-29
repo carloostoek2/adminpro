@@ -164,6 +164,18 @@ async def on_shutdown(bot: Bot, dispatcher: Dispatcher) -> None:
     # Detener background tasks (sin bloquear)
     stop_background_tasks()
 
+    # Detener health check API
+    health_task = dispatcher.workflow_data.get('health_task')
+    if health_task and not health_task.done():
+        logger.info("🛑 Deteniendo health check API...")
+        health_task.cancel()
+        try:
+            await asyncio.wait_for(health_task, timeout=5)
+        except (asyncio.CancelledError, asyncio.TimeoutError):
+            logger.warning("⚠️ Health API no respondió a shutdown (timeout)")
+        except Exception as e:
+            logger.warning(f"⚠️ Error deteniendo health API: {e}")
+
     # Notificar a admins (con timeout para no bloquear shutdown)
     shutdown_message = "🛑 Bot detenido correctamente"
 
