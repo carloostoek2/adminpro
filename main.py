@@ -24,6 +24,16 @@ from bot.health.runner import start_health_server
 logger = logging.getLogger(__name__)
 
 
+def should_use_webhook() -> bool:
+    """
+    Detecta si el bot debe ejecutarse en modo webhook.
+
+    Returns:
+        True si WEBHOOK_MODE=webhook, False para polling
+    """
+    return Config.WEBHOOK_MODE == "webhook"
+
+
 async def _get_bot_info_with_retry(bot: Bot, max_retries: int = 2, timeout: int = 5) -> dict | None:
     """
     Obtiene información del bot con reintentos rápidos.
@@ -54,6 +64,63 @@ async def _get_bot_info_with_retry(bot: Bot, max_retries: int = 2, timeout: int 
         except Exception as e:
             logger.error(f"❌ Error al obtener info del bot: {e}")
             return None
+
+
+async def on_startup_webhook(bot: Bot, dispatcher: Dispatcher) -> None:
+    """
+    Callback de startup específico para modo webhook.
+
+    Configura el webhook antes de iniciar el servidor.
+    """
+    logger.info("🚀 Iniciando bot en modo WEBHOOK...")
+
+    # Validar configuración
+    if not Config.validate():
+        logger.error("❌ Configuración inválida. Revisa tu archivo .env")
+        sys.exit(1)
+
+    logger.info(Config.get_summary())
+
+    # Ejecutar migraciones automáticas
+    try:
+        await run_migrations_if_needed()
+    except Exception as e:
+        logger.error(f"❌ Error ejecutando migraciones: {e}")
+        sys.exit(1)
+
+    # Inicializar base de datos
+    try:
+        await init_db()
+    except Exception as e:
+        logger.error(f"❌ Error al inicializar BD: {e}")
+        sys.exit(1)
+
+    # Iniciar background tasks
+    start_background_tasks(bot)
+
+    # Configurar webhook
+    webhook_url = f"{Config.WEBHOOK_BASE_URL}{Config.WEBHOOK_PATH}"
+    logger.info(f"🔗 Configurando webhook: {webhook_url}")
+
+    try:
+        await bot.set_webhook(
+            url=webhook_url,
+            secret_token=Config.WEBHOOK_SECRET,
+            drop_pending_updates=True
+        )
+        logger.info("✅ Webhook configurado correctamente")
+    except Exception as e:
+        logger.error(f"❌ Error configurando webhook: {e}")
+        sys.exit(1)
+
+    # Iniciar health check API
+    try:
+        health_task = await start_health_server()
+        dispatcher.workflow_data['health_task'] = health_task
+        logger.info("✅ Health check API iniciado")
+    except Exception as e:
+        logger.error(f"❌ Error iniciando health API: {e}")
+        logger.warning("⚠️ Bot continuará sin health check endpoint")
 
 
 async def on_startup(bot: Bot, dispatcher: Dispatcher) -> None:
@@ -205,11 +272,9 @@ async def main() -> None:
     """
     Función principal que ejecuta el bot.
 
-    Configuración:
-    - Bot con parse_mode HTML por defecto
-    - MemoryStorage para FSM (ligero, apropiado para Termux)
-    - Dispatcher con callbacks de startup/shutdown
-    - Polling con timeout de 30s (apropiado para Termux)
+    Soporta dos modos:
+    - Polling: Bot hace requests a Telegram (default para desarrollo)
+    - Webhook: Telegram envía updates al bot (óptimo para Railway)
     """
     # Crear instancia del bot con sesión customizada
     # Aumentar timeout a 120s para handlers que tardan más tiempo
@@ -239,32 +304,65 @@ async def main() -> None:
     from bot.handlers import register_all_handlers
     register_all_handlers(dp)
 
-    # Registrar callbacks de lifecycle
-    dp.startup.register(on_startup)
-    dp.shutdown.register(on_shutdown)
+    # Detectar modo de operación
+    use_webhook = should_use_webhook()
 
-    try:
-        # Iniciar polling (long polling con timeout de 30s)
-        logger.info("🔄 Iniciando polling...")
-        await dp.start_polling(
-            bot,
-            allowed_updates=dp.resolve_used_update_types(),
-            timeout=30,  # Timeout apropiado para conexiones inestables en Termux
-            drop_pending_updates=True,  # Ignorar updates pendientes del pasado
-            relax_timeout=True  # Reduce requests frecuentes
-        )
-    except KeyboardInterrupt:
-        logger.info("⌨️ Interrupción por teclado (Ctrl+C)")
-    except Exception as e:
-        logger.error(f"❌ Error crítico en polling: {e}", exc_info=True)
-    finally:
-        # Cleanup forceful
-        logger.info("🧹 Limpiando recursos...")
+    if use_webhook:
+        logger.info("🔄 Iniciando en modo WEBHOOK...")
+        # Registrar callbacks de webhook
+        dp.startup.register(on_startup_webhook)
+        dp.shutdown.register(on_shutdown)
+
+        # Iniciar webhook server
         try:
-            await bot.session.close()
-            logger.info("🔌 Sesión del bot cerrada")
+            await dp.start_webhook(
+                bot,
+                webhook_path=Config.WEBHOOK_PATH,
+                host=Config.WEBHOOK_HOST,
+                port=Config.PORT,
+                secret_token=Config.WEBHOOK_SECRET
+            )
+        except KeyboardInterrupt:
+            logger.info("⌨️ Interrupción por teclado (Ctrl+C)")
         except Exception as e:
-            logger.warning(f"⚠️ Error cerrando sesión: {e}")
+            logger.error(f"❌ Error crítico en webhook: {e}", exc_info=True)
+        finally:
+            # Cleanup forceful
+            logger.info("🧹 Limpiando recursos...")
+            try:
+                await bot.session.close()
+                logger.info("🔌 Sesión del bot cerrada")
+            except Exception as e:
+                logger.warning(f"⚠️ Error cerrando sesión: {e}")
+    else:
+        logger.info("🔄 Iniciando en modo POLLING...")
+        # Registrar callbacks de polling
+        dp.startup.register(on_startup)
+        dp.shutdown.register(on_shutdown)
+
+        # Iniciar polling
+        try:
+            # Iniciar polling (long polling con timeout de 30s)
+            logger.info("🔄 Iniciando polling...")
+            await dp.start_polling(
+                bot,
+                allowed_updates=dp.resolve_used_update_types(),
+                timeout=30,  # Timeout apropiado para conexiones inestables en Termux
+                drop_pending_updates=True,  # Ignorar updates pendientes del pasado
+                relax_timeout=True  # Reduce requests frecuentes
+            )
+        except KeyboardInterrupt:
+            logger.info("⌨️ Interrupción por teclado (Ctrl+C)")
+        except Exception as e:
+            logger.error(f"❌ Error crítico en polling: {e}", exc_info=True)
+        finally:
+            # Cleanup forceful
+            logger.info("🧹 Limpiando recursos...")
+            try:
+                await bot.session.close()
+                logger.info("🔌 Sesión del bot cerrada")
+            except Exception as e:
+                logger.warning(f"⚠️ Error cerrando sesión: {e}")
 
 
 _shutdown_timeout_active = False
