@@ -12,7 +12,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -313,6 +313,85 @@ class TestRunnerService:
             return commit, branch
         except Exception:
             return None, None
+
+    async def run_tests_with_report(
+        self,
+        test_paths: Optional[List[str]] = None,
+        coverage: bool = False,
+        marker: Optional[str] = None,
+        timeout: int = 300,
+        save_history: bool = True,
+        generate_html: bool = False,
+        html_output_path: Optional[Path] = None
+    ) -> Tuple[TestResult, Dict[str, Any]]:
+        """
+        Ejecuta tests con reporte completo incluyendo historial y tendencias.
+
+        Args:
+            test_paths: Paths especificos a testear (None = todos)
+            coverage: Si True, incluye coverage
+            marker: Marker de pytest para filtrar tests
+            timeout: Timeout en segundos para la ejecucion
+            save_history: Si True, guarda el resultado en historial
+            generate_html: Si True, genera reporte HTML
+            html_output_path: Ruta para el reporte HTML (opcional)
+
+        Returns:
+            Tupla de (TestResult, report_dict con tendencias y metadata)
+        """
+        from bot.utils.test_report import TestReportHistory, TestReportFormatter
+
+        # Ejecutar tests
+        result = await self.run_tests(
+            test_paths=test_paths,
+            coverage=coverage,
+            marker=marker,
+            timeout=timeout
+        )
+
+        # Cargar historial para comparacion
+        history = TestReportHistory(project_root=self.project_root)
+        trend = await history.get_trend_comparison(result)
+
+        # Guardar en historial (no bloquear)
+        if save_history:
+            asyncio.create_task(history.add_record(result))
+
+        # Generar HTML si se solicita
+        html_path = None
+        if generate_html:
+            formatter = TestReportFormatter(project_root=self.project_root)
+            html_path = formatter.generate_html_report(
+                result,
+                output_path=html_output_path,
+                trend=trend
+            )
+
+        # Construir reporte completo
+        report = {
+            "result": result,
+            "trend": trend,
+            "html_path": html_path,
+            "git": {
+                "commit": result.git_commit,
+                "branch": result.git_branch
+            },
+            "timestamp": result.timestamp
+        }
+
+        return result, report
+
+    async def get_test_statistics(self) -> Dict[str, Any]:
+        """
+        Obtiene estadisticas del historial de tests.
+
+        Returns:
+            Diccionario con estadisticas agregadas
+        """
+        from bot.utils.test_report import TestReportHistory
+
+        history = TestReportHistory(project_root=self.project_root)
+        return await history.get_statistics()
 
     async def run_smoke_tests(self) -> TestResult:
         """Ejecuta solo smoke tests (verificacion rapida)."""
