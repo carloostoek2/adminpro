@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 18 of 18 (Admin Test Runner & Performance Profiling)
-Plan: 3 of 4 in current phase
-Status: In progress - Plan 18-03 complete
-Last activity: 2026-01-30 — Completed Plan 18-03 (Performance Profiling with pyinstrument Integration)
+Plan: 4 of 4 in current phase
+Status: Complete - Phase 18 finished
+Last activity: 2026-01-30 — Completed Plan 18-04 (SQLite to PostgreSQL Migration and N+1 Query Detection)
 
-Progress: [████████████████████] 99%
+Progress: [████████████████████] 100%
 
 ## Performance Metrics
 
@@ -104,6 +104,7 @@ See PROJECT.md Key Decisions table for full decision log.
 - Phase 18-01: Admin test runner with CLI script and Telegram /run_tests command (complete)
 - Phase 18-02: Test reporting with coverage, trends, and multi-format output (complete)
 - Phase 18-03: Performance profiling with pyinstrument integration (complete)
+- Phase 18-04: SQLite to PostgreSQL migration script with validation and N+1 query detection (complete)
 - **v1.2: Redis caching DEFERRED to v1.3 (out of scope)**
 
 **v1.1 Key Decisions:**
@@ -157,12 +158,26 @@ None.
 - SQLAlchemy event monitoring via before_cursor_execute/after_cursor_execute
 - MagicMock detection to avoid attaching events to mock sessions
 
+**Phase 18-04 Key Decisions:**
+- N+1 detection threshold: 5 similar queries (configurable via class constant)
+- Slow query threshold: 100ms (configurable via SLOW_QUERY_THRESHOLD)
+- Migration batch size: 100 rows per INSERT for memory efficiency
+- Debug mode: Opt-in parameter (not env var) for flexibility
+- Eager loading: Explicit methods (backward compatible, doesn't change defaults)
+- Migration validation: Row count verification for all tables
+- Query analysis: Context manager pattern for scoped monitoring
+
 ## Session Continuity
 
-Last session: 2026-01-30 (Phase 18-03 execution)
-Stopped at: Completed Plan 18-03 (Performance Profiling with pyinstrument Integration)
+Last session: 2026-01-30 (Phase 18-04 execution)
+Stopped at: Completed Plan 18-04 (SQLite to PostgreSQL Migration and N+1 Query Detection)
 Resume file: None
-Next: Continue Phase 18 (Plan 18-04: Load Testing)
+Next: Phase 18 COMPLETE - All 4 plans finished
+
+---
+
+*State updated: 2026-01-30 after Plan 18-04 completion*
+*Phase 18 (Admin Test Runner & Performance Profiling) is now COMPLETE*
 
 ---
 
