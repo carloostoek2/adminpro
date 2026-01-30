@@ -122,7 +122,7 @@ class QueryAnalyzer:
                 @event.listens_for(sync_engine, "after_cursor_execute")
                 def on_after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
                     if hasattr(context, '_query_start_time'):
-                        duration = (time.perf_counter() - context._query_start_time]) * 1000
+                        duration = (time.perf_counter() - context._query_start_time) * 1000
                         query_info = QueryInfo(
                             statement=statement,
                             parameters=parameters if parameters else (),
