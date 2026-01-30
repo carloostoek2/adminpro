@@ -6,15 +6,32 @@ reportes formateados y notificaciones a administradores.
 """
 
 import asyncio
+import json
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class FailedTestInfo:
+    """Informacion de un test fallido."""
+    name: str
+    file_path: str
+    line_number: Optional[int] = None
+    error_message: Optional[str] = None
+    error_type: Optional[str] = None
+
+    def __str__(self) -> str:
+        if self.line_number:
+            return f"{self.file_path}:{self.line_number}::{self.name}"
+        return f"{self.file_path}::{self.name}"
 
 
 @dataclass
@@ -30,6 +47,21 @@ class TestResult:
     stdout: str
     stderr: str
     coverage_percent: Optional[float] = None
+    coverage_by_module: Optional[dict] = None
+    failed_tests: Optional[List[FailedTestInfo]] = None
+    warnings: Optional[List[str]] = None
+    git_commit: Optional[str] = None
+    git_branch: Optional[str] = None
+    timestamp: Optional[str] = None
+
+    def __post_init__(self):
+        """Inicializa valores por defecto."""
+        if self.coverage_by_module is None:
+            self.coverage_by_module = {}
+        if self.failed_tests is None:
+            self.failed_tests = []
+        if self.warnings is None:
+            self.warnings = []
 
     @property
     def success(self) -> bool:
@@ -146,6 +178,9 @@ class TestRunnerService:
         passed = failed = errors = skipped = 0
         duration = 0.0
         coverage_percent = None
+        coverage_by_module: Dict[str, float] = {}
+        failed_tests: List[FailedTestInfo] = []
+        warnings: List[str] = []
 
         # Parse summary line like: "50 passed, 2 failed, 1 error in 12.34s"
         # or: "50 passed, 2 failed, 1 error, 3 skipped in 12.34s"
@@ -167,6 +202,29 @@ class TestRunnerService:
         if coverage_match:
             coverage_percent = float(coverage_match.group(1))
 
+        # Parse coverage by module
+        # Pattern: "module_name.py           45     10    78%"
+        module_pattern = r"^(\S+\.py)\s+\d+\s+\d+\s+(\d+)%$"
+        for line in output.split("\n"):
+            mod_match = re.match(module_pattern, line)
+            if mod_match:
+                module_name = mod_match.group(1)
+                module_coverage = float(mod_match.group(2))
+                coverage_by_module[module_name] = module_coverage
+
+        # Parse failed tests with details
+        failed_tests = self._parse_failed_tests(output)
+
+        # Parse warnings
+        warning_pattern = r"(\d+ warnings?|Warning:.*)$"
+        for line in output.split("\n"):
+            warn_match = re.search(warning_pattern, line, re.IGNORECASE)
+            if warn_match:
+                warnings.append(warn_match.group(0))
+
+        # Get git info
+        git_commit, git_branch = self._get_git_info()
+
         return TestResult(
             returncode=returncode,
             passed=passed,
@@ -177,8 +235,84 @@ class TestRunnerService:
             duration_seconds=duration,
             stdout=stdout,
             stderr=stderr,
-            coverage_percent=coverage_percent
+            coverage_percent=coverage_percent,
+            coverage_by_module=coverage_by_module,
+            failed_tests=failed_tests,
+            warnings=warnings,
+            git_commit=git_commit,
+            git_branch=git_branch,
+            timestamp=datetime.utcnow().isoformat()
         )
+
+    def _parse_failed_tests(self, output: str) -> List[FailedTestInfo]:
+        """Parse failed tests with file:line information."""
+        failed_tests: List[FailedTestInfo] = []
+
+        # Pattern for FAILED/ERROR lines with file info
+        # Example: "FAILED tests/test_example.py::test_name - Error message"
+        failed_pattern = r"(FAILED|ERROR)\s+(\S+)::(\S+)(?:\s+-\s+(.+))?"
+
+        for match in re.finditer(failed_pattern, output):
+            status = match.group(1)
+            file_path = match.group(2)
+            test_name = match.group(3)
+            error_msg = match.group(4) if match.group(4) else None
+
+            # Try to extract line number from file path (format: path/to/file.py::test_name)
+            line_number = None
+            if ".py" in file_path:
+                # Check if there's line info in the traceback
+                line_pattern = rf"{re.escape(file_path)}:(\d+)"
+                line_match = re.search(line_pattern, output)
+                if line_match:
+                    line_number = int(line_match.group(1))
+
+            # Extract error type from error message
+            error_type = None
+            if error_msg:
+                # Common error patterns: "AssertionError: ...", "ValueError: ..."
+                type_match = re.match(r"^(\w+Error|Error|Exception):", error_msg)
+                if type_match:
+                    error_type = type_match.group(1)
+
+            failed_tests.append(FailedTestInfo(
+                name=test_name,
+                file_path=file_path,
+                line_number=line_number,
+                error_message=error_msg,
+                error_type=error_type
+            ))
+
+        return failed_tests
+
+    def _get_git_info(self) -> tuple:
+        """Get current git commit and branch."""
+        try:
+            import subprocess
+
+            # Get commit hash
+            commit_result = subprocess.run(
+                ["git", "rev-parse", "--short", "HEAD"],
+                capture_output=True,
+                text=True,
+                cwd=self.project_root,
+                timeout=5
+            )
+            commit = commit_result.stdout.strip() if commit_result.returncode == 0 else None
+
+            # Get branch
+            branch_result = subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                capture_output=True,
+                text=True,
+                cwd=self.project_root,
+                timeout=5
+            )
+            branch = branch_result.stdout.strip() if branch_result.returncode == 0 else None
+
+            return commit, branch
+        except Exception:
+            return None, None
 
     async def run_smoke_tests(self) -> TestResult:
         """Ejecuta solo smoke tests (verificacion rapida)."""
