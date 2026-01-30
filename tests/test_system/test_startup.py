@@ -225,24 +225,26 @@ async def test_background_tasks_job_details():
     mock_bot = Mock()
     mock_bot.id = 123456789
 
-    start_background_tasks(mock_bot)
+    try:
+        start_background_tasks(mock_bot)
 
-    status = get_scheduler_status()
-    jobs = status["jobs"]
+        status = get_scheduler_status()
+        jobs = status["jobs"]
 
-    # Verify job IDs
-    job_ids = [job["id"] for job in jobs]
-    assert "expire_vip" in job_ids
-    assert "process_free_queue" in job_ids
-    assert "cleanup_old_data" in job_ids
+        # Verify job IDs
+        job_ids = [job["id"] for job in jobs]
+        assert "expire_vip" in job_ids
+        assert "process_free_queue" in job_ids
+        assert "cleanup_old_data" in job_ids
 
-    # Verify job names are present
-    job_names = [job["name"] for job in jobs]
-    assert any("VIP" in name or "vip" in name for name in job_names)
-    assert any("Free" in name or "free" in name for name in job_names)
+        # Verify job names are present
+        job_names = [job["name"] for job in jobs]
+        assert any("VIP" in name or "vip" in name for name in job_names)
+        assert any("Free" in name or "free" in name for name in job_names)
+    finally:
+        # Cleanup
+        stop_background_tasks()
 
-    # Cleanup
-    stop_background_tasks()
 
 
 async def test_service_container_dependency_injection(container):
