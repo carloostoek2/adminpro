@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 
 ## Current Position
 
-Phase: 17 of 18 (System Tests)
-Plan: 4 of 4 in current phase
-Status: Phase complete, all goals verified
-Last activity: 2026-01-30 — Phase 17 completed (System Tests)
+Phase: 18 of 18 (Admin Test Runner & Performance Profiling)
+Plan: 1 of 4 in current phase
+Status: In progress - Plan 18-01 complete
+Last activity: 2026-01-30 — Completed Plan 18-01 (Admin Test Runner Script and Telegram Command)
 
-Progress: [██████████████████░░] 97%
+Progress: [███████████████████░] 98%
 
 ## Performance Metrics
 
@@ -100,9 +100,8 @@ See PROJECT.md Key Decisions table for full decision log.
 - Phase 17-02: Menu system tests with 54 tests covering Admin/VIP/Free menus, role-based routing, FSM state management, callback navigation
 - Phase 17-03: Role detection and user management tests with 57 tests covering role priority (Admin > VIP > Free), stateless behavior, user operations, audit logging
 - Phase 17-04: VIP/Free flow tests and message provider tests with 57 tests covering token lifecycle, queue processing, all 13 message providers, Lucien voice consistency
-- Phase 17: Comprehensive test coverage for all critical flows (in progress)
-- Phase 18: Admin test runner for non-technical users
-- Phase 18: Performance profiling with pyinstrument for bottleneck identification
+- Phase 17: Comprehensive test coverage for all critical flows (complete)
+- Phase 18-01: Admin test runner with CLI script and Telegram /run_tests command (complete)
 - **v1.2: Redis caching DEFERRED to v1.3 (out of scope)**
 
 **v1.1 Key Decisions:**
@@ -135,13 +134,19 @@ None.
 - MissingGreenlet error: Applied eager loading with selectinload()
 - Role change confirmation callback parsing: Fixed index checking
 
+**Phase 18-01 Key Decisions:**
+- Subprocess execution prevents test crashes from affecting the bot (asyncio.create_subprocess_exec)
+- Lock-based concurrency prevents multiple simultaneous test runs (asyncio.Lock)
+- HTML formatting for Telegram with automatic truncation at 4000 chars
+- Three admin commands: /run_tests, /test_status, /smoke_test
+
 ## Session Continuity
 
-Last session: 2026-01-30 (Phase 17-04 execution)
-Stopped at: Completed Plan 17-04 (VIP/Free Flow Tests and Message Provider Tests)
+Last session: 2026-01-30 (Phase 18-01 execution)
+Stopped at: Completed Plan 18-01 (Admin Test Runner Script and Telegram Command)
 Resume file: None
-Next: Continue Phase 17 (System Tests)
+Next: Continue Phase 18 (Plan 18-02: Performance Profiling)
 
 ---
 
-*State updated: 2026-01-30 after Plan 17-04 completion*
+*State updated: 2026-01-30 after Plan 18-01 completion*
