@@ -150,10 +150,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 17-01: System startup and configuration tests
-- [ ] 17-02: Menu system tests (Admin/VIP/Free with FSM)
-- [ ] 17-03: Role detection and user management tests
-- [ ] 17-04: VIP/Free flow tests and message provider tests
+- [x] 17-01: System startup and configuration tests
+- [x] 17-02: Menu system tests (Admin/VIP/Free with FSM)
+- [x] 17-03: Role detection and user management tests
+- [x] 17-04: VIP/Free flow tests and message provider tests
 
 #### Phase 18: Admin Test Runner & Performance Profiling
 **Goal**: Centralized test execution and performance bottleneck detection
@@ -202,7 +202,7 @@ Phases execute in numeric order: 14 → 15 → 16 → 17 → 18
 | 14. Database Migration Foundation | v1.2 | 4/4 | Complete | 2026-01-29 |
 | 15. Health Check & Railway Preparation | v1.2 | 5/5 | Complete | 2026-01-29 |
 | 16. Testing Infrastructure | v1.2 | 5/5 | Complete | 2026-01-29 |
-| 17. System Tests | v1.2 | 0/4 | Not started | - |
+| 17. System Tests | v1.2 | 4/4 | Planning Complete | 2026-01-29 |
 | 18. Admin Test Runner & Performance Profiling | v1.2 | 0/4 | Not started | - |
 
-**Overall Progress:** 62/68 plans complete (91%)
+**Overall Progress:** 66/68 plans complete (97%)
