@@ -123,12 +123,11 @@ async def on_startup_webhook(bot: Bot, dispatcher: Dispatcher) -> None:
         logger.error(f"❌ Error configurando webhook: {e}")
         sys.exit(1)
 
-    # Iniciar health check API
+    # Iniciar health check API en thread separado
     try:
-        health_task = await start_health_server()
-        if health_task is not None:
-            dispatcher.workflow_data['health_task'] = health_task
-            logger.info("✅ Health check API iniciado")
+        health_thread = await start_health_server()
+        if health_thread is not None:
+            logger.info("✅ Health check API iniciado en background thread")
         else:
             logger.warning("⚠️ Health API no disponible - bot continúa sin health checks")
             logger.warning("   Esto no afecta la funcionalidad del bot")
@@ -183,22 +182,19 @@ async def on_startup(bot: Bot, dispatcher: Dispatcher) -> None:
     # Iniciar background tasks
     start_background_tasks(bot)
 
-    # Iniciar health check API (corre concurrentemente con el bot)
-    # Testing: Verified concurrent execution with health API responding to HTTP requests
-    # - Health API starts on HEALTH_PORT (8000) without blocking bot startup
-    # - Both services share the same asyncio event loop
-    # - Health endpoint returns valid JSON (e.g., {"status": "unhealthy", "components": {...}})
-    # - Graceful shutdown stops both services cleanly (5s timeout)
+    # Iniciar health check API en thread separado
+    # El health server corre en su propio thread con su propio event loop
+    # para evitar conflictos con uvicorn y las señales de aiogram
     try:
-        health_task = await start_health_server()
-        logger.info("✅ Health check API iniciado")
+        health_thread = await start_health_server()
+        if health_thread is not None:
+            logger.info("✅ Health check API iniciado en background thread")
+        else:
+            logger.warning("⚠️ Health API no disponible - bot continúa sin health checks")
+            logger.warning("   Esto no afecta la funcionalidad del bot")
     except Exception as e:
         logger.error(f"❌ Error iniciando health API: {e}")
         logger.warning("⚠️ Bot continuará sin health check endpoint")
-        health_task = None
-
-    # Store health task for graceful shutdown
-    dispatcher.workflow_data['health_task'] = health_task
 
     # Notificar a admins que el bot está online (con reintentos)
     bot_info = await _get_bot_info_with_retry(bot)
