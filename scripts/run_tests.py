@@ -18,6 +18,7 @@ import json
 import re
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -55,13 +56,41 @@ class TestRunner:
         # Fallback to python -m pytest
         return "python"
 
+    def _run_subprocess_sync(
+        self,
+        cmd: List[str],
+        timeout: int
+    ) -> Tuple[int, str, str]:
+        """
+        Ejecuta subprocess de forma síncrona (para usar en thread pool).
+
+        Returns:
+            Tuple de (returncode, stdout, stderr)
+        """
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                cwd=self.project_root,
+                encoding="utf-8",
+                errors="replace"
+            )
+            return result.returncode, result.stdout, result.stderr
+        except subprocess.TimeoutExpired as e:
+            return 1, "", f"Timeout: Tests took longer than {timeout} seconds"
+        except Exception as e:
+            return 1, "", f"Error ejecutando subprocess: {e}"
+
     async def run_tests(
         self,
         test_paths: Optional[List[str]] = None,
         coverage: bool = False,
         marker: Optional[str] = None,
         verbose: bool = False,
-        junit_xml: Optional[str] = None
+        junit_xml: Optional[str] = None,
+        timeout: int = 300
     ) -> Tuple[int, str, str]:
         """
         Ejecuta tests en subprocess y retorna resultado.
@@ -72,6 +101,7 @@ class TestRunner:
             marker: Ejecutar solo tests con este marker
             verbose: Salida verbose de pytest
             junit_xml: Path para output XML (opcional)
+            timeout: Timeout en segundos (default: 300)
 
         Returns:
             Tuple de (returncode, stdout, stderr)
@@ -104,20 +134,15 @@ class TestRunner:
         else:
             cmd.append("tests/")
 
-        # Execute in subprocess
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=self.project_root
-        )
-
-        stdout, stderr = await proc.communicate()
-
-        stdout_str = stdout.decode("utf-8", errors="replace")
-        stderr_str = stderr.decode("utf-8", errors="replace")
-
-        return proc.returncode or 0, stdout_str, stderr_str
+        # Execute in thread pool to handle timeout correctly
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as pool:
+            return await loop.run_in_executor(
+                pool,
+                self._run_subprocess_sync,
+                cmd,
+                timeout
+            )
 
     def parse_results(self, stdout: str, stderr: str) -> dict:
         """
@@ -140,16 +165,19 @@ class TestRunner:
         output = stdout + "\n" + stderr
 
         # Parse summary line like: "50 passed, 2 failed, 1 error in 12.34s"
-        # or: "50 passed, 2 failed, 1 error, 3 skipped in 12.34s"
-        summary_pattern = r"(\d+) passed(?:, (\d+) failed)?(?:, (\d+) error)?(?:, (\d+) skipped)? in ([\d.]+)s"
-        match = re.search(summary_pattern, output)
+        # or: "1 failed, 251 passed, 3 skipped in 46.51s" (any order)
+        # Buscar cada métrica independientemente
+        passed_match = re.search(r"(\d+) passed", output)
+        failed_match = re.search(r"(\d+) failed", output)
+        error_match = re.search(r"(\d+) error", output)
+        skipped_match = re.search(r"(\d+) skipped", output)
+        duration_match = re.search(r"in ([\d.]+)s", output)
 
-        if match:
-            results["passed"] = int(match.group(1)) if match.group(1) else 0
-            results["failed"] = int(match.group(2)) if match.group(2) else 0
-            results["errors"] = int(match.group(3)) if match.group(3) else 0
-            results["skipped"] = int(match.group(4)) if match.group(4) else 0
-            results["duration"] = float(match.group(5)) if match.group(5) else 0.0
+        results["passed"] = int(passed_match.group(1)) if passed_match else 0
+        results["failed"] = int(failed_match.group(1)) if failed_match else 0
+        results["errors"] = int(error_match.group(1)) if error_match else 0
+        results["skipped"] = int(skipped_match.group(1)) if skipped_match else 0
+        results["duration"] = float(duration_match.group(1)) if duration_match else 0.0
 
         results["total"] = results["passed"] + results["failed"] + results["errors"] + results["skipped"]
 
@@ -227,6 +255,12 @@ async def main():
         action="store_true",
         help="Output en formato JSON"
     )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=300,
+        help="Timeout en segundos (default: 300)"
+    )
 
     args = parser.parse_args()
 
@@ -243,7 +277,8 @@ async def main():
             coverage=args.coverage,
             marker=args.marker,
             verbose=args.verbose,
-            junit_xml=args.junit_xml
+            junit_xml=args.junit_xml,
+            timeout=args.timeout
         )
 
         # Parse and format results
@@ -260,12 +295,21 @@ async def main():
                 print("\n📝 Detalles de fallos:")
                 print("-" * 60)
                 # Extract failed test names from output
-                failed_pattern = r"FAILED\s+(\S+)"
+                # Pattern: "FAILED tests/file.py::test_name"
+                failed_pattern = r"FAILED\s+([\w\-\./]+::\w+)"
                 failed_tests = re.findall(failed_pattern, stdout + stderr)
-                for test in failed_tests[:10]:  # Show first 10
+                # Remove duplicates while preserving order
+                seen = set()
+                unique_tests = []
+                for test in failed_tests:
+                    if test not in seen:
+                        seen.add(test)
+                        unique_tests.append(test)
+
+                for test in unique_tests[:10]:  # Show first 10
                     print(f"  ❌ {test}")
-                if len(failed_tests) > 10:
-                    print(f"  ... y {len(failed_tests) - 10} mas")
+                if len(unique_tests) > 10:
+                    print(f"  ... y {len(unique_tests) - 10} mas")
 
         sys.exit(returncode)
 
