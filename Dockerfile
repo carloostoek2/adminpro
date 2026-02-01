@@ -12,8 +12,8 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements first for caching
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Install Python dependencies to a dedicated directory
+RUN pip install --no-cache-dir --target=/app/deps -r requirements.txt
 
 # Stage 2: Runtime
 FROM python:3.11-slim
@@ -25,16 +25,16 @@ WORKDIR /app
 RUN groupadd -r botuser && useradd -r -g botuser botuser
 
 # Copy installed packages from builder
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder /app/deps /app/deps
 
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Set Python path to include dependencies
+ENV PYTHONPATH=/app/deps:$PYTHONPATH
 
 # Copy application code
 COPY . .
 
-# Create data directory for SQLite (if needed)
-RUN mkdir -p /data && chown -R botuser:botuser /data
+# Create data directory for SQLite (if needed) and set ownership
+RUN mkdir -p /data && chown -R botuser:botuser /data /app
 
 # Switch to non-root user
 USER botuser
