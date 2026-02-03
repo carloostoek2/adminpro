@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Literal
 
 from config import Config as AppConfig
+from bot.database.dialect import parse_database_url
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +81,13 @@ def run_alembic_command(command_args: list[str]) -> tuple[int, str, str]:
 
     logger.info(f"Running: {' '.join(cmd)}")
 
-    # Set environment with DATABASE_URL
+    # Parse DATABASE_URL to inject async driver (asyncpg/aiosqlite)
+    # This ensures the URL format is correct for Alembic
+    _, database_url_with_driver = parse_database_url(AppConfig.DATABASE_URL)
+
+    # Set environment with parsed DATABASE_URL (with driver injected)
     env = os.environ.copy()
-    env["DATABASE_URL"] = AppConfig.DATABASE_URL
+    env["DATABASE_URL"] = database_url_with_driver
 
     try:
         result = subprocess.run(
