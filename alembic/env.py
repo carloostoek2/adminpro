@@ -67,14 +67,16 @@ def get_engine() -> AsyncEngine:
         configuration["poolclass"] = "sqlalchemy.pool.QueuePool"
         configuration["pool_size"] = "5"
         configuration["max_overflow"] = "10"
+        pool_class = pool.QueuePool
     else:
         # SQLite: NullPool
         configuration["poolclass"] = "sqlalchemy.pool.NullPool"
+        pool_class = pool.NullPool
 
     return async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
+        poolclass=pool_class,
     )
 
 
@@ -129,7 +131,22 @@ def run_migrations_online() -> None:
     connection with the context.
     """
     import asyncio
-    asyncio.run(run_async_migrations())
+
+    # Check if we're already in an event loop (called from async context)
+    try:
+        loop = asyncio.get_running_loop()
+        # We're in an event loop, need to use a different approach
+        # Create a new event loop for this thread
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        try:
+            new_loop.run_until_complete(run_async_migrations())
+        finally:
+            new_loop.close()
+            asyncio.set_event_loop(loop)
+    except RuntimeError:
+        # No event loop running, safe to use asyncio.run()
+        asyncio.run(run_async_migrations())
 
 
 if context.is_offline_mode():
