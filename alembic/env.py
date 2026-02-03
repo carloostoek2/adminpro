@@ -23,6 +23,7 @@ from bot.database.enums import UserRole, ContentCategory, RoleChangeReason, Pack
 
 # Import config for DATABASE_URL
 from config import Config
+from bot.database.dialect import parse_database_url
 
 # Alembic Config object
 config = context.config
@@ -34,9 +35,13 @@ if config.config_file_name is not None:
 # Set logger for Alembic
 logger = logging.getLogger("alembic.env")
 
-# Set sqlalchemy.url in Alembic config from DATABASE_URL
+# Parse DATABASE_URL to inject async driver (asyncpg/aiosqlite)
+# This ensures the URL format is correct for async SQLAlchemy
+_, DATABASE_URL_WITH_DRIVER = parse_database_url(Config.DATABASE_URL)
+
+# Set sqlalchemy.url in Alembic config from parsed DATABASE_URL
 # This allows Alembic to use the same database as the application
-config.set_main_option("sqlalchemy.url", Config.DATABASE_URL)
+config.set_main_option("sqlalchemy.url", DATABASE_URL_WITH_DRIVER)
 
 # Add metadata for autogenerate
 target_metadata = Base.metadata
@@ -49,13 +54,16 @@ def get_engine() -> AsyncEngine:
     Uses the same configuration as the application (bot/database/engine.py).
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = Config.DATABASE_URL
 
-    # Detect dialect from DATABASE_URL
-    from bot.database.dialect import parse_database_url, DatabaseDialect
+    # DATABASE_URL_WITH_DRIVER already has the async driver injected
+    # (e.g., postgresql+asyncpg:// or sqlite+aiosqlite://)
+    configuration["sqlalchemy.url"] = DATABASE_URL_WITH_DRIVER
+
+    # Detect dialect from parsed URL
+    from bot.database.dialect import DatabaseDialect
 
     try:
-        dialect, _ = parse_database_url(Config.DATABASE_URL)
+        dialect, _ = parse_database_url(DATABASE_URL_WITH_DRIVER)
         logger.info(f"🔍 Alembic: Dialect detectado: {dialect.value}")
     except Exception as e:
         logger.error(f"❌ Alembic: Error detectando dialecto: {e}")
