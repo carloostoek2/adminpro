@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 Phase: 18 of 18 (Admin Test Runner & Performance Profiling)
 Plan: 4 of 4 in current phase
 Status: Complete - Phase 18 finished
-Last activity: 2026-01-30 — Completed Plan 18-04 (SQLite to PostgreSQL Migration and N+1 Query Detection)
+Last activity: 2026-02-04 — Completed quick task 005: Eliminar usuario completamente del sistema
 
 Progress: [████████████████████] 100%
 
@@ -121,6 +121,12 @@ See PROJECT.md Key Decisions table for full decision log.
 ### Pending Todos
 
 None.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 005 | Eliminar usuario completamente del sistema | 2026-02-04 | a9af9b8 | [005-eliminar-usuario-completo](./quick/005-eliminar-usuario-completo/) |
 
 ### Blockers/Concerns
 
