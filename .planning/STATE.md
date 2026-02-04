@@ -134,7 +134,7 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 005 | Eliminar usuario completamente del sistema | 2026-02-04 | a9af9b8 | [005-eliminar-usuario-completo](./quick/005-eliminar-usuario-completo/) |
-| 006 | Gestion masiva de solicitudes Free (aprobar/rechazar todas) | 2026-02-04 | 123800a | [006-implementar-la-funcionalidad-para-proces](./quick/006-implementar-la-funcionalidad-para-proces/) |
+| 006 | Gestion masiva de solicitudes Free (aprobar/rechazar todas) | 2026-02-04 | ca321ce | [006-implementar-la-funcionalidad-para-proces](./quick/006-implementar-la-funcionalidad-para-proces/) |
 
 ### Blockers/Concerns
 
