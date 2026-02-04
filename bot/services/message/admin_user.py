@@ -518,6 +518,87 @@ class AdminUserMessages(BaseMessageProvider):
         keyboard = self._expel_confirm_keyboard(user_id)
         return text, keyboard
 
+    def delete_confirm(
+        self,
+        user_info: Dict[str, Any]
+    ) -> Tuple[str, InlineKeyboardMarkup]:
+        """
+        Mensaje de confirmación para eliminar usuario completamente.
+
+        Args:
+            user_info: Diccionario con información del usuario
+
+        Returns:
+            Tupla (text, keyboard)
+
+        Voice Rationale:
+            "Eliminar Usuario" with irreversible warning.
+            "Será borrado del jardín" - dramatic Lucien voice.
+            Lists all data that will be deleted.
+        """
+        user_id = user_info["user_id"]
+        username = user_info.get("username") or f"id{user_id}"
+        first_name = user_info.get("first_name", "Usuario")
+        role = user_info.get("role")
+
+        role_emoji = self.ROLE_EMOJIS.get(role, "❓")
+        role_name = self.ROLE_NAMES.get(role, "Desconocido")
+
+        header = f"🎩 <b>Lucien:</b>\n\n<i>Una acción irreversible...</i>"
+
+        body = (
+            f"⚠️ <b>Eliminar Usuario Definitivamente</b>\n\n"
+            f"👤 <b>Usuario:</b> {first_name} (@{username})\n"
+            f"🆔 <b>ID:</b> {user_id}\n"
+            f"{role_emoji} <b>Rol:</b> {role_name}\n\n"
+            f"<b>Se eliminará permanentemente:</b>\n"
+            f"• Cuenta de usuario\n"
+            f"• Suscripción VIP (si existe)\n"
+            f"• Solicitudes al canal Free\n"
+            f"• Intereses en paquetes\n"
+            f"• Historial de cambios de rol\n"
+            f"• Tokens de invitación asociados\n\n"
+            f"<i>⚠️ Esta acción no puede deshacerse. El habitante será borrado del jardín.</i>\n\n"
+            f"<i>¿Está seguro de continuar?</i>"
+        )
+
+        text = self._compose(header, body)
+        keyboard = self._delete_confirm_keyboard(user_id)
+        return text, keyboard
+
+    def delete_success(
+        self,
+        user_info: Dict[str, Any]
+    ) -> Tuple[str, InlineKeyboardMarkup]:
+        """
+        Mensaje de éxito para eliminación completa de usuario.
+
+        Args:
+            user_info: Diccionario con información del usuario eliminado
+
+        Returns:
+            Tupla (text, keyboard)
+
+        Voice Rationale:
+            "El habitante ha sido removido" - passive, elegant.
+            Confirmation that all traces were erased.
+        """
+        user_id = user_info["user_id"]
+        username = user_info.get("username") or f"id{user_id}"
+        first_name = user_info.get("first_name", "Usuario")
+
+        header = f"🎩 <b>Lucien:</b>\n\n<i>El habitante ha sido removido...</i>"
+
+        body = (
+            f"✅ <b>Usuario Eliminado</b>\n\n"
+            f"<b>{first_name}</b> (@{username}) ha sido eliminado completamente del sistema.\n\n"
+            f"<i>Todos sus datos han sido borrados del jardín.</i>"
+        )
+
+        text = self._compose(header, body)
+        keyboard = self._delete_success_keyboard()
+        return text, keyboard
+
     def expel_success(
         self,
         user_info: Dict[str, Any],
@@ -767,6 +848,21 @@ class AdminUserMessages(BaseMessageProvider):
 
     def _expel_success_keyboard(self) -> InlineKeyboardMarkup:
         """Generate keyboard for expel success."""
+        return create_inline_keyboard([
+            [{"text": "👥 Volver a Lista", "callback_data": "admin:users:list:all"}],
+        ])
+
+    def _delete_confirm_keyboard(self, user_id: int) -> InlineKeyboardMarkup:
+        """Generate keyboard for delete confirmation."""
+        return create_inline_keyboard([
+            [
+                {"text": "🗑️ Eliminar Definitivamente", "callback_data": f"admin:user:delete:confirm:{user_id}"},
+                {"text": "❌ Cancelar", "callback_data": f"admin:user:view:{user_id}:overview"}
+            ],
+        ])
+
+    def _delete_success_keyboard(self) -> InlineKeyboardMarkup:
+        """Generate keyboard for delete success."""
         return create_inline_keyboard([
             [{"text": "👥 Volver a Lista", "callback_data": "admin:users:list:all"}],
         ])
