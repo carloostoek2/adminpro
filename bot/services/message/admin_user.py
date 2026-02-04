@@ -814,7 +814,8 @@ class AdminUserMessages(BaseMessageProvider):
                 {"text": "🚫 Bloquear", "callback_data": f"admin:user:block:{user_id}"}
             ],
             [
-                {"text": "🚪 Expulsar", "callback_data": f"admin:user:expel:{user_id}"}
+                {"text": "🚪 Expulsar", "callback_data": f"admin:user:expel:{user_id}"},
+                {"text": "🗑️ Eliminar", "callback_data": f"admin:user:delete:{user_id}"}
             ],
             [{"text": "🔙 Volver a la Lista", "callback_data": "admin:users:list:all"}],
         ])

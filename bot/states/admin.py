@@ -211,9 +211,19 @@ class UserManagementStates(StatesGroup):
     3. Admin envía query: username o ID
     4. Bot muestra resultados y sale del estado
 
+    Flujo de eliminación:
+    1. Admin selecciona "Eliminar" en perfil de usuario
+    2. Bot muestra confirmación y entra en deleting_user
+    3. Admin confirma o cancela
+    4. Bot ejecuta eliminación y sale del estado
+
     Estados:
     - searching_user: Esperando query de búsqueda (username o ID)
+    - deleting_user: Confirmando eliminación de usuario
     """
 
     # Esperando que admin envíe query de búsqueda
     searching_user = State()
+
+    # Confirmando eliminación de usuario
+    deleting_user = State()

@@ -654,6 +654,160 @@ async def callback_user_expel_confirm(callback: CallbackQuery, session: AsyncSes
     logger.info(f"✅ Admin {admin_id} expelled user {user_id} from channels: {', '.join(expelled_from)}")
 
 
+# ===== DELETE USER =====
+
+@users_router.callback_query(F.data.startswith("admin:user:delete:"))
+async def callback_user_delete(callback: CallbackQuery, state, session: AsyncSession):
+    """
+    Show delete confirmation dialog.
+
+    Callback data format:
+    - "admin:user:delete:{user_id}" - Show confirmation
+    - "admin:user:delete:confirm:{user_id}" - Execute delete (handled by callback_user_delete_confirm)
+
+    Args:
+        callback: Callback query
+        state: FSM state
+        session: Sesión de BD
+    """
+    container = ServiceContainer(session, callback.bot)
+
+    # Parse callback data using CallbackParser
+    cb_data = CallbackParser.parse_or_none(callback.data)
+    if not cb_data:
+        logger.warning(f"⚠️ Invalid callback data: {callback.data}")
+        await callback.answer("❌ Datos inválidos", show_alert=True)
+        return
+
+    # Check if this is a confirm callback
+    if cb_data.has("confirm"):
+        await callback_user_delete_confirm(callback, state, session)
+        return
+
+    user_id = cb_data.get_int("delete")
+    if not user_id:
+        await callback.answer("❌ ID de usuario inválido", show_alert=True)
+        return
+
+    # Get user info
+    user_info = await container.user_management.get_user_info(user_id=user_id)
+
+    if not user_info:
+        await callback.answer("❌ Usuario no encontrado", show_alert=True)
+        return
+
+    # Check permissions first
+    can_modify, error_msg = await container.user_management._can_modify_user(
+        target_user_id=user_id,
+        admin_user_id=callback.from_user.id
+    )
+
+    if not can_modify:
+        await callback.answer(f"❌ {error_msg}", show_alert=True)
+        return
+
+    # Set FSM state for confirmation flow
+    await state.set_state(UserManagementStates.deleting_user)
+
+    # Show confirmation dialog
+    text, keyboard = container.message.admin.user.delete_confirm(user_info)
+
+    try:
+        await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.warning(f"Could not edit message: {e}")
+        else:
+            logger.debug("ℹ️ Mensaje sin cambios, ignorando")
+
+    await callback.answer()
+
+
+async def callback_user_delete_confirm(callback: CallbackQuery, state, session: AsyncSession):
+    """
+    Execute user deletion (confirmed).
+
+    Callback data format: "admin:user:delete:confirm:{user_id}"
+
+    Args:
+        callback: Callback query
+        state: FSM state
+        session: Sesión de BD
+    """
+    container = ServiceContainer(session, callback.bot)
+
+    # Extract user_id from callback using CallbackParser
+    cb_data = CallbackParser.parse_or_none(callback.data)
+    if not cb_data or not cb_data.has("confirm"):
+        logger.warning(f"⚠️ Invalid callback data: {callback.data}")
+        await callback.answer("❌ Datos inválidos", show_alert=True)
+        return
+
+    user_id = cb_data.get_int("confirm")
+
+    if not user_id:
+        await callback.answer("❌ ID de usuario inválido", show_alert=True)
+        return
+
+    # Get user info before deletion
+    user_info = await container.user_management.get_user_info(user_id=user_id)
+
+    if not user_info:
+        await callback.answer("❌ Usuario no encontrado", show_alert=True)
+        await state.clear()
+        return
+
+    admin_id = callback.from_user.id
+
+    # Notify user before deletion (best effort)
+    try:
+        await callback.bot.send_message(
+            chat_id=user_id,
+            text="🎩 <b>Lucien:</b>\n\n<i>Su presencia en el jardín ha llegado a su fin...</i>\n\n"
+                 "⚠️ <b>Su cuenta ha sido eliminada del sistema por un administrador.</b>\n\n"
+                 "<i>Todos sus datos han sido borrados permanentemente.</i>",
+            parse_mode="HTML"
+        )
+        logger.info(f"📨 Notificación de eliminación enviada a usuario {user_id}")
+    except Exception as e:
+        # User may have blocked the bot
+        logger.warning(f"⚠️ No se pudo notificar al usuario {user_id} sobre eliminación: {e}")
+
+    # Perform deletion
+    success, message, deleted_user = await container.subscription.delete_user_completely(
+        user_id=user_id,
+        deleted_by=admin_id
+    )
+
+    # Clear FSM state
+    await state.clear()
+
+    if not success:
+        # Show error message
+        await callback.answer(f"❌ {message}", show_alert=True)
+        text, keyboard = container.message.admin.user.action_error(message)
+        try:
+            await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+        except Exception as e:
+            if "message is not modified" not in str(e):
+                logger.warning(f"Could not edit message: {e}")
+        return
+
+    # Show success message
+    text, keyboard = container.message.admin.user.delete_success(user_info=user_info)
+
+    try:
+        await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.warning(f"Could not edit message: {e}")
+        else:
+            logger.debug("ℹ️ Mensaje sin cambios, ignorando")
+
+    await callback.answer("✅ Usuario eliminado", show_alert=True)
+    logger.info(f"✅ Admin {admin_id} deleted user {user_id} completely")
+
+
 # ===== BLOCK USER (Placeholder) =====
 
 @users_router.callback_query(F.data.startswith("admin:user:block:"))
