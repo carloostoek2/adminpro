@@ -369,8 +369,7 @@ async def callback_approve_all_free(callback: CallbackQuery, session: AsyncSessi
 
     try:
         # Get pending count
-        pending_requests = await container.subscription.get_pending_free_requests()
-        count = len(pending_requests)
+        count = await container.subscription.get_pending_free_requests_count()
 
         if count == 0:
             await callback.answer(
@@ -470,8 +469,7 @@ async def callback_reject_all_free(callback: CallbackQuery, session: AsyncSessio
 
     try:
         # Get pending count
-        pending_requests = await container.subscription.get_pending_free_requests()
-        count = len(pending_requests)
+        count = await container.subscription.get_pending_free_requests_count()
 
         if count == 0:
             await callback.answer(

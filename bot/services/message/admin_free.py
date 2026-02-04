@@ -350,7 +350,6 @@ class AdminFreeMessages(BaseMessageProvider):
             # List first 10 requests with user_id and waiting time
             request_lines = []
             for i, req in enumerate(pending_requests[:10], 1):
-                minutes_waiting = req.minutes_since_request()
                 time_waiting = format_relative_time(
                     req.request_date,
                     reference=datetime.utcnow()
@@ -429,7 +428,7 @@ class AdminFreeMessages(BaseMessageProvider):
                 f"Custodio, está a punto de denegar acceso al vestíbulo "
                 f"a <b>{count}</b> visitante{'s' if count != 1 else ''}...\n\n"
                 f"Esta acción rechazará todas las solicitudes pendientes. "
-                f"Los usuarios serán notificados de que su solicitud fue denegada.\n\n"
+                f"Los usuarios no recibirán una notificación sobre el rechazo.\n\n"
                 f"⚠️ <b>¿Desea proceder?</b>"
             )
         )

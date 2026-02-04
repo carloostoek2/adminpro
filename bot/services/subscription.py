@@ -15,7 +15,7 @@ from typing import Optional, List, Tuple, Dict, Any
 
 from aiogram import Bot
 from aiogram.types import ChatInviteLink
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -1156,12 +1156,25 @@ class SubscriptionService:
         )
         return list(result.scalars().all())
 
+    async def get_pending_free_requests_count(self) -> int:
+        """
+        Obtiene la cantidad de solicitudes Free pendientes.
+
+        Returns:
+            int: Cantidad de solicitudes pendientes
+        """
+        result = await self.session.execute(
+            select(func.count(FreeChannelRequest.id))
+            .where(FreeChannelRequest.processed == False)
+        )
+        return result.scalar_one_or_none() or 0
+
     async def approve_all_free_requests(
         self,
         free_channel_id: str
     ) -> Tuple[int, int]:
         """
-        Aprueba todas las solicitudes Free pendientes.
+        Aprueba todas las solicitudes Free pendientes en lotes.
 
         Args:
             free_channel_id: ID del canal Free
@@ -1169,37 +1182,37 @@ class SubscriptionService:
         Returns:
             Tuple[int, int]: (success_count, error_count)
         """
-        pending_requests = await self.get_pending_free_requests()
-
-        if not pending_requests:
-            logger.debug("No hay solicitudes Free pendientes para aprobar")
-            return 0, 0
-
         success_count = 0
         error_count = 0
 
-        for request in pending_requests:
-            try:
-                # Aprobar solicitud en Telegram
-                await self.bot.approve_chat_join_request(
-                    chat_id=free_channel_id,
-                    user_id=request.user_id
-                )
+        while True:
+            pending_requests = await self.get_pending_free_requests(limit=100)
+            if not pending_requests:
+                logger.debug("No hay más solicitudes Free pendientes para aprobar")
+                break
 
-                # Marcar como procesada
-                request.processed = True
-                request.processed_at = datetime.utcnow()
+            for request in pending_requests:
+                try:
+                    # Aprobar solicitud en Telegram
+                    await self.bot.approve_chat_join_request(
+                        chat_id=free_channel_id,
+                        user_id=request.user_id
+                    )
 
-                success_count += 1
-                logger.info(f"✅ Solicitud Free aprobada (bulk): user {request.user_id}")
+                    # Marcar como procesada
+                    request.processed = True
+                    request.processed_at = datetime.utcnow()
 
-            except Exception as e:
-                error_count += 1
-                logger.warning(
-                    f"⚠️ Error aprobando solicitud de user {request.user_id}: {e}"
-                )
+                    success_count += 1
+                    logger.info(f"✅ Solicitud Free aprobada (bulk): user {request.user_id}")
 
-        await self.session.commit()
+                except Exception as e:
+                    error_count += 1
+                    logger.warning(
+                        f"⚠️ Error aprobando solicitud de user {request.user_id}: {e}"
+                    )
+
+            await self.session.commit()
 
         logger.info(
             f"📊 Aprobación masiva completada: {success_count} aprobadas, "
@@ -1213,7 +1226,7 @@ class SubscriptionService:
         free_channel_id: str
     ) -> Tuple[int, int]:
         """
-        Rechaza todas las solicitudes Free pendientes.
+        Rechaza todas las solicitudes Free pendientes en lotes.
 
         Args:
             free_channel_id: ID del canal Free
@@ -1221,37 +1234,37 @@ class SubscriptionService:
         Returns:
             Tuple[int, int]: (success_count, error_count)
         """
-        pending_requests = await self.get_pending_free_requests()
-
-        if not pending_requests:
-            logger.debug("No hay solicitudes Free pendientes para rechazar")
-            return 0, 0
-
         success_count = 0
         error_count = 0
 
-        for request in pending_requests:
-            try:
-                # Rechazar solicitud en Telegram
-                await self.bot.decline_chat_join_request(
-                    chat_id=free_channel_id,
-                    user_id=request.user_id
-                )
+        while True:
+            pending_requests = await self.get_pending_free_requests(limit=100)
+            if not pending_requests:
+                logger.debug("No hay más solicitudes Free pendientes para rechazar")
+                break
 
-                # Marcar como procesada
-                request.processed = True
-                request.processed_at = datetime.utcnow()
+            for request in pending_requests:
+                try:
+                    # Rechazar solicitud en Telegram
+                    await self.bot.decline_chat_join_request(
+                        chat_id=free_channel_id,
+                        user_id=request.user_id
+                    )
 
-                success_count += 1
-                logger.info(f"🚫 Solicitud Free rechazada (bulk): user {request.user_id}")
+                    # Marcar como procesada
+                    request.processed = True
+                    request.processed_at = datetime.utcnow()
 
-            except Exception as e:
-                error_count += 1
-                logger.warning(
-                    f"⚠️ Error rechazando solicitud de user {request.user_id}: {e}"
-                )
+                    success_count += 1
+                    logger.info(f"🚫 Solicitud Free rechazada (bulk): user {request.user_id}")
 
-        await self.session.commit()
+                except Exception as e:
+                    error_count += 1
+                    logger.warning(
+                        f"⚠️ Error rechazando solicitud de user {request.user_id}: {e}"
+                    )
+
+            await self.session.commit()
 
         logger.info(
             f"📊 Rechazo masivo completado: {success_count} rechazadas, "
