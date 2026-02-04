@@ -684,7 +684,7 @@ async def callback_user_delete(callback: CallbackQuery, state, session: AsyncSes
         await callback_user_delete_confirm(callback, state, session)
         return
 
-    user_id = cb_data.get_int("delete")
+    user_id = cb_data.get_int("user_id")
     if not user_id:
         await callback.answer("❌ ID de usuario inválido", show_alert=True)
         return
