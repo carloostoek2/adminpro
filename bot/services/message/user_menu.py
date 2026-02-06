@@ -115,13 +115,20 @@ class UserMenuMessages(BaseMessageProvider):
 
         header = f"🎩 <b>Lucien:</b>\n\n<i>{greeting}</i>"
 
+        # Meses en español para localización de fechas
+        MESES_ES = {
+            1: "enero", 2: "febrero", 3: "marzo", 4: "abril",
+            5: "mayo", 6: "junio", 7: "julio", 8: "agosto",
+            9: "septiembre", 10: "octubre", 11: "noviembre", 12: "diciembre"
+        }
+
         # Subscription status section
         if vip_expires_at:
             # Check if subscription is still active (not expired)
             from datetime import datetime
             if vip_expires_at > datetime.utcnow():
-                # Active subscription - show expiry date
-                expiry_text = vip_expires_at.strftime("%d de %B de %Y")
+                # Active subscription - show expiry date in Spanish
+                expiry_text = f"{vip_expires_at.day} de {MESES_ES[vip_expires_at.month]} de {vip_expires_at.year}"
                 subscription_status = f"<b>⏳ Su membresía expira el {expiry_text}</b>"
             else:
                 # Expired subscription - show warning
@@ -130,10 +137,11 @@ class UserMenuMessages(BaseMessageProvider):
             subscription_status = "<b>✨ Su membresía es permanente</b>"
 
         body = (
-            f"<b>👑 Menú del Círculo Exclusivo</b>\n\n"
-            f"Bienvenido, <b>{safe_name}</b>.\n\n"
+            f"Bienvenido de nuevo.\n\n"
+            f"💎 <b>El Diván de Diana</b> 💎\n\n"
+            f"<b>{safe_name}</b>.\n\n"
             f"{subscription_status}\n\n"
-            f"<i>¿Qué tesoros del sanctum desea explorar hoy?</i>"
+            f"<i>¿Qué desea explorar hoy?</i>"
         )
 
         text = self._compose(header, body)
@@ -617,8 +625,8 @@ class UserMenuMessages(BaseMessageProvider):
             - Uses create_menu_navigation for consistent "Salir" button
         """
         content_buttons = [
-            [{"text": "💎 Tesoros del Sanctum", "callback_data": "vip:premium"}],
-            [{"text": "🌸 Mi Contenido", "callback_data": "vip:free_content"}],
+            [{"text": "💎 Contenido Premium", "callback_data": "vip:premium"}],
+            [{"text": "📦 Mi contenido", "callback_data": "vip:free_content"}],
             [{"text": "📊 Estado de la Membresía", "callback_data": "vip:status"}],
         ]
         return create_content_with_navigation(
@@ -642,9 +650,9 @@ class UserMenuMessages(BaseMessageProvider):
             - Uses create_menu_navigation for consistent "Salir" button
         """
         content_buttons = [
-            [{"text": "🌸 Muestras del Jardín", "callback_data": "menu:free:content"}],
-            [{"text": "⭐ Círculo Exclusivo", "callback_data": "menu:free:vip"}],
-            [{"text": "🌺 Jardines Públicos", "callback_data": "menu:free:social"}],
+            [{"text": "📦 Mi contenido", "callback_data": "menu:free:content"}],
+            [{"text": "🛋️ El Diván", "callback_data": "menu:free:vip"}],
+            [{"text": "🔗 Mis redes", "callback_data": "menu:free:social"}],
         ]
         return create_content_with_navigation(
             content_buttons,
