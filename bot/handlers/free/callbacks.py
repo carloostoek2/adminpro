@@ -698,7 +698,8 @@ async def handle_menu_back(callback: CallbackQuery, container):
             callback.message,
             data,
             user_id=user.id,
-            user_first_name=user.first_name
+            user_first_name=user.first_name,
+            edit_mode=True
         )
         await callback.answer()
     except Exception as e:

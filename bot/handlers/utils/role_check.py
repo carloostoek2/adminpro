@@ -101,7 +101,8 @@ async def redirect_to_free_menu(callback: CallbackQuery, container) -> None:
             callback.message,
             data,
             user_id=callback.from_user.id,
-            user_first_name=callback.from_user.first_name
+            user_first_name=callback.from_user.first_name,
+            edit_mode=True
         )
         logger.info(f"🔄 Usuario {callback.from_user.id} redirigido al menú Free")
     except Exception as e:

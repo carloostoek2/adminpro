@@ -618,7 +618,7 @@ class UserMenuMessages(BaseMessageProvider):
         """
         content_buttons = [
             [{"text": "💎 Tesoros del Sanctum", "callback_data": "vip:premium"}],
-            [{"text": "🌸 Muestras del Jardín (Free)", "callback_data": "vip:free_content"}],
+            [{"text": "🌸 Mi Contenido", "callback_data": "vip:free_content"}],
             [{"text": "📊 Estado de la Membresía", "callback_data": "vip:status"}],
         ]
         return create_content_with_navigation(

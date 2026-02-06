@@ -1,0 +1,47 @@
+[
+  {
+    "timestamp": "2026-02-01T05:46:05.790253",
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "duration_seconds": 0.0,
+    "coverage_percent": null,
+    "success": false,
+    "git_commit": "d8b7d56",
+    "git_branch": "admin",
+    "failed_count": 7,
+    "warnings_count": 154
+  },
+  {
+    "timestamp": "2026-02-01T07:28:05.840569",
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "duration_seconds": 0.0,
+    "coverage_percent": null,
+    "success": false,
+    "git_commit": "d8b7d56",
+    "git_branch": "admin",
+    "failed_count": 8,
+    "warnings_count": 154
+  },
+  {
+    "timestamp": "2026-02-01T18:08:59.080030",
+    "total": 442,
+    "passed": 439,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 3,
+    "duration_seconds": 102.08,
+    "coverage_percent": null,
+    "success": false,
+    "git_commit": "ecba4f8",
+    "git_branch": "admin",
+    "failed_count": 7,
+    "warnings_count": 154
+  }
+]
