@@ -136,7 +136,7 @@ None.
 | 005 | Eliminar usuario completamente del sistema | 2026-02-04 | a9af9b8 | [005-eliminar-usuario-completo](./quick/005-eliminar-usuario-completo/) |
 | 006 | Gestion masiva de solicitudes Free (aprobar/rechazar todas) | 2026-02-04 | ca321ce | [006-implementar-la-funcionalidad-para-proces](./quick/006-implementar-la-funcionalidad-para-proces/) |
 | 007 | Modificar flujo de aceptacion Free para usar callback | 2026-02-05 | 329cfba | [007-modificar-flujo-de-aceptacion-free-para-](./quick/007-modificar-flujo-de-aceptacion-free-para-/) |
-| 008 | Verificar CRUD para paquetes de contenido | 2026-02-06 | pre-existing | [008-implementar-funcionalidades-crud-para-el](./quick/008-implementar-funcionalidades-crud-para-el/) |
+| 008 | Verificar CRUD para paquetes de contenido | 2026-02-06 | 8b459a7 | [008-implementar-funcionalidades-crud-para-el](./quick/008-implementar-funcionalidades-crud-para-el/) |
 
 ### Blockers/Concerns
 
