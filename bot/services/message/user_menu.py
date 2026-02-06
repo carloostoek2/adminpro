@@ -281,7 +281,7 @@ class UserMenuMessages(BaseMessageProvider):
 
         # Create minimalist package buttons (one per row, name only)
         package_buttons = [
-            [{"text": f"📦 {pkg.name}", "callback_data": f"user:packages:{pkg.id}"}]
+            [{"text": f"📦 {pkg.name}", "callback_data": f"vip:packages:{pkg.id}"}]
             for pkg in sorted_packages
         ]
 
@@ -358,8 +358,9 @@ class UserMenuMessages(BaseMessageProvider):
         text = self._compose(header, body)
 
         # Create minimalist package buttons (one per row, name only)
+        # NOTE: Using "free:packages:" prefix to avoid conflict with VIP router
         package_buttons = [
-            [{"text": f"📦 {pkg.name}", "callback_data": f"user:packages:{pkg.id}"}]
+            [{"text": f"📦 {pkg.name}", "callback_data": f"free:packages:{pkg.id}"}]
             for pkg in sorted_packages
         ]
 
@@ -367,6 +368,86 @@ class UserMenuMessages(BaseMessageProvider):
             package_buttons,
             back_text="⬅️ Volver al Menú Free",
             back_callback="menu:free:main"
+        )
+
+        return text, keyboard
+
+    def vip_free_content_section(
+        self,
+        user_name: str,
+        packages: List[ContentPackage],
+        user_id: Optional[int] = None,
+        session_history: Optional["SessionMessageHistory"] = None
+    ) -> Tuple[str, InlineKeyboardMarkup]:
+        """
+        Generate Free content section for VIP users browsing free content.
+
+        Args:
+            user_name: User's first name (will be HTML-escaped)
+            packages: List of ContentPackage objects for Free content
+            user_id: Optional Telegram user ID for session-aware selection
+            session_history: Optional SessionMessageHistory for context awareness
+
+        Returns:
+            Tuple of (text, keyboard) for Free content listing shown to VIP users
+
+        Voice Rationale:
+            VIP users viewing Free content are "miembros del círculo explorando el jardín público".
+            Same minimalist list format as free_content_section.
+            Uses "vip:free:" prefix for callbacks to route through VIP handlers.
+            Back button returns to VIP main menu (not Free menu).
+
+        Examples:
+            >>> provider = UserMenuMessages()
+            >>> from bot.database.models import ContentPackage
+            >>> packages = [ContentPackage(id=1, name="Muestra 1")]
+            >>> text, kb = provider.vip_free_content_section("Juan", packages)
+            >>> '🎩' in text and 'Juan' in text
+            True
+            >>> 'jardín público' in text.lower()
+            True
+        """
+        safe_name = escape_html(user_name)
+
+        # Weighted section introductions for VIP viewing Free content
+        introductions = [
+            "Como miembro del círculo, también puede explorar el jardín público...",
+            "El círculo exclusivo no cierra las puertas al jardín...",
+            "Diana permite que los miembros del sanctum contemplen las muestras..."
+        ]
+
+        introduction = self._choose_variant(
+            introductions,
+            user_id=user_id,
+            method_name="vip_free_content_section",
+            session_history=session_history
+        )
+
+        header = f"🎩 <b>Lucien:</b>\n\n<i>{introduction}</i>"
+
+        # Sort packages by price (free first, then ascending)
+        sorted_packages = self._sort_packages_by_price(packages)
+
+        body = (
+            f"<b>🌸 Sección de Contenido Free</b>\n\n"
+            f"<b>{safe_name}</b>, explore las muestras del jardín público...\n\n"
+            f"<i>Como miembro del círculo exclusivo, tiene acceso a todo el contenido. "
+            f"Seleccione un paquete para ver detalles...</i>"
+        )
+
+        text = self._compose(header, body)
+
+        # Create minimalist package buttons with vip:free: prefix
+        # This ensures callbacks go through VIP router with proper validation
+        package_buttons = [
+            [{"text": f"📦 {pkg.name}", "callback_data": f"vip:free:packages:{pkg.id}"}]
+            for pkg in sorted_packages
+        ]
+
+        keyboard = create_content_with_navigation(
+            package_buttons,
+            back_text="⬅️ Volver al Menú VIP",
+            back_callback="menu:back"
         )
 
         return text, keyboard
@@ -504,8 +585,10 @@ class UserMenuMessages(BaseMessageProvider):
         text = self._compose(header, body)
 
         # Create keyboard with action and navigation
+        # Use role-specific callback prefixes to avoid router conflicts
+        role_prefix = "vip" if user_role == "VIP" else "free"
         content_buttons = [
-            [{"text": "⭐ Me interesa", "callback_data": f"user:package:interest:{package.id}"}]
+            [{"text": "⭐ Me interesa", "callback_data": f"{role_prefix}:package:interest:{package.id}"}]
         ]
 
         keyboard = create_content_with_navigation(
@@ -513,7 +596,7 @@ class UserMenuMessages(BaseMessageProvider):
             include_back=True,
             include_exit=False,  # Only back button, no exit
             back_text="⬅️ Volver",
-            back_callback="user:packages:back"
+            back_callback=f"{role_prefix}:packages:back"
         )
 
         return text, keyboard
@@ -535,6 +618,7 @@ class UserMenuMessages(BaseMessageProvider):
         """
         content_buttons = [
             [{"text": "💎 Tesoros del Sanctum", "callback_data": "vip:premium"}],
+            [{"text": "🌸 Muestras del Jardín (Free)", "callback_data": "vip:free_content"}],
             [{"text": "📊 Estado de la Membresía", "callback_data": "vip:status"}],
         ]
         return create_content_with_navigation(

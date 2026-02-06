@@ -432,8 +432,10 @@ class UserFlowMessages(BaseMessageProvider):
         ])
 
         # Secondary actions: Regresar and Inicio buttons
+        # Use role-specific prefix to avoid router conflicts
+        role_prefix = "vip" if user_role == "VIP" else "free"
         buttons.append([
-            {"text": "📋 Regresar", "callback_data": f"user:packages:back:{user_role}"},
+            {"text": "📋 Regresar", "callback_data": f"{role_prefix}:packages:back:{user_role}"},
             {"text": "🏠 Inicio", "callback_data": f"menu:{user_role.lower()}:main"}
         ])
 

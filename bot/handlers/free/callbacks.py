@@ -75,7 +75,7 @@ async def handle_free_approved_enter(callback: CallbackQuery, container):
 # Register SPECIFIC handlers BEFORE GENERIC ones to avoid pattern matching conflicts
 # "user:packages:back" must be registered before "user:packages:{id}"
 
-@free_callbacks_router.callback_query(lambda c: c.data == "user:packages:back")
+@free_callbacks_router.callback_query(lambda c: c.data == "free:packages:back")
 async def handle_packages_back_to_list(callback: CallbackQuery, container):
     """
     Vuelve al listado de paquetes Free (desde vista de detalle o confirmación).
@@ -89,12 +89,12 @@ async def handle_packages_back_to_list(callback: CallbackQuery, container):
     await handle_free_content(callback, container)
 
 
-@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:packages:back:"))
+@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("free:packages:back:"))
 async def handle_packages_back_with_role(callback: CallbackQuery, container):
     """
     Vuelve al listado de paquetes desde confirmación de interés (con user_role).
 
-    Callback data format: "user:packages:back:{user_role}"
+    Callback data format: "free:packages:back:{user_role}"
 
     Ignora el user_role y siempre vuelve al listado Free (router Free).
 
@@ -105,7 +105,7 @@ async def handle_packages_back_with_role(callback: CallbackQuery, container):
     await handle_free_content(callback, container)
 
 
-@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:packages:"))
+@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("free:packages:"))
 async def handle_package_detail(callback: CallbackQuery, container):
     """
     Muestra vista detallada de un paquete específico.
@@ -164,7 +164,7 @@ async def handle_package_detail(callback: CallbackQuery, container):
         await callback.answer("⚠️ Error cargando detalles del paquete", show_alert=True)
 
 
-@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:package:interest:"))
+@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("free:package:interest:"))
 async def handle_package_interest_confirm(callback: CallbackQuery, container):
     """
     Registra interés en paquete y muestra mensaje de confirmación con contacto directo.
