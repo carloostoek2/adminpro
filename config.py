@@ -58,9 +58,13 @@ class Config:
     WEBHOOK_HOST: str = os.getenv("WEBHOOK_HOST", "0.0.0.0")
 
     # ===== DATABASE =====
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "sqlite+aiosqlite:///bot.db"
+    # Auto-detect testing mode to prevent database contamination
+    # If TESTING=true, force in-memory database regardless of .env
+    _TESTING_MODE: bool = os.getenv("TESTING", "").lower() in ("true", "1", "yes")
+    DATABASE_URL: str = (
+        "sqlite+aiosqlite:///:memory:"
+        if _TESTING_MODE
+        else os.getenv("DATABASE_URL", "sqlite+aiosqlite:///bot.db")
     )
 
     # ===== CHANNELS =====

@@ -148,23 +148,23 @@ class AdminContentMessages(BaseMessageProvider):
             True
         """
         # Get category info
-        category_emoji = "🆓"
-        category_name = "Gratuito"
+        category_emoji = "🌸"
+        category_name = "Promos"
         if package.category:
             category_str = str(package.category)
             if "vip" in category_str and "premium" in category_str:
                 category_emoji = "💎"
-                category_name = "VIP Premium"
+                category_name = "Premium"
             elif "vip" in category_str:
-                category_emoji = "⭐"
-                category_name = "VIP"
+                category_emoji = "🛋️"
+                category_name = "El Diván"
 
         # Status indicator
         status_emoji = "✅" if package.is_active else "🚫"
         status_text = "Activo" if package.is_active else "Inactivo"
 
         # Price display
-        price_text = "Gratis"
+        price_text = "Promo"
         if package.price is not None:
             price_text = f"${package.price:.2f}"
 
@@ -217,26 +217,26 @@ class AdminContentMessages(BaseMessageProvider):
             True
         """
         # Get category info
-        category_emoji = "🆓"
-        category_name = "Contenido Gratuito"
+        category_emoji = "🌸"
+        category_name = "Promos"
         if package.category:
             category_str = str(package.category)
             if "vip_premium" in category_str:
                 category_emoji = "💎"
-                category_name = "VIP Premium"
+                category_name = "Premium"
             elif "vip_content" in category_str:
-                category_emoji = "⭐"
-                category_name = "Contenido VIP"
+                category_emoji = "🛋️"
+                category_name = "El Diván"
             elif "free_content" in category_str:
-                category_emoji = "🆓"
-                category_name = "Contenido Gratuito"
+                category_emoji = "🌸"
+                category_name = "Promos"
 
         # Status indicator
         status_emoji = "✅" if package.is_active else "🚫"
         status_text = "Activo" if package.is_active else "Inactivo"
 
         # Price display
-        price_text = "Gratis"
+        price_text = "Promo"
         if package.price is not None:
             price_text = f"${package.price:.2f}"
 
@@ -371,11 +371,11 @@ class AdminContentMessages(BaseMessageProvider):
         text = self._compose(header, body)
         keyboard = create_inline_keyboard([
             [
-                {"text": "🆓 Contenido Gratuito", "callback_data": "admin:content:create:type:free_content"},
-                {"text": "⭐ Contenido VIP", "callback_data": "admin:content:create:type:vip_content"}
+                {"text": "🌸 Promos", "callback_data": "admin:content:create:type:free_content"},
+                {"text": "🛋️ El Diván", "callback_data": "admin:content:create:type:vip_content"}
             ],
             [
-                {"text": "💎 VIP Premium", "callback_data": "admin:content:create:type:vip_premium"},
+                {"text": "💎 Premium", "callback_data": "admin:content:create:type:vip_premium"},
             ],
             [{"text": "❌ Cancelar", "callback_data": "admin:content"}],
         ])
@@ -398,7 +398,7 @@ class AdminContentMessages(BaseMessageProvider):
             f"<b>➕ Paso 3/4: Precio (Opcional)</b>\n\n"
             f"<i>Asigne un precio a este paquete, si corresponde.</i>\n\n"
             f"<i>Puede enviar un valor numérico (ej: 9.99) o /skip para omitir "
-            f"y dejar el contenido gratuito.</i>\n\n"
+            f"y dejar el acceso promocional.</i>\n\n"
             f"<b>Envíe el precio o /skip:</b>"
         )
 

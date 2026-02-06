@@ -155,9 +155,9 @@ class AdminInterestMessages(BaseMessageProvider):
             "all": "📋 Todos los Intereses",
             "pending": "⏳ Intereses Pendientes",
             "attended": "✅ Intereses Atendidos",
-            "vip_premium": "💎 Premium Exclusivo",
-            "vip_content": "👑 Contenido VIP",
-            "free_content": "🌸 Contenido Gratuito"
+            "vip_premium": "💎 Premium",
+            "vip_content": "🛋️ El Diván",
+            "free_content": "🌸 Promos"
         }
 
         title = filter_titles.get(filter_type, "📋 Intereses")
@@ -179,7 +179,7 @@ class AdminInterestMessages(BaseMessageProvider):
                 pkg_category_str = str(package.category) if hasattr(package, 'category') and package.category else "UNKNOWN"
                 pkg_emoji = {
                     "VIP_PREMIUM": "💎",
-                    "VIP_CONTENT": "👑",
+                    "VIP_CONTENT": "🛋️",
                     "FREE_CONTENT": "🌸"
                 }.get(pkg_category_str, "📦")
 
@@ -224,8 +224,8 @@ class AdminInterestMessages(BaseMessageProvider):
             "pending": "No hay intereses pendientes de atención en este momento.",
             "attended": "No hay intereses atendidos con este filtro aún.",
             "vip_premium": "Nadie ha mostrado interés en los tesoros Premium aún.",
-            "vip_content": "No hay intereses registrados en contenido VIP.",
-            "free_content": "No hay intereses en contenido gratuito."
+            "vip_content": "No hay intereses registrados en El Diván.",
+            "free_content": "No hay intereses en promos."
         }
 
         message = filter_messages.get(
@@ -269,9 +269,9 @@ class AdminInterestMessages(BaseMessageProvider):
         # Format package info
         pkg_category_str = str(package.category) if hasattr(package, 'category') and package.category else "UNKNOWN"
         pkg_type_emoji = {
-            "VIP_PREMIUM": "💎 Premium Exclusivo",
-            "VIP_CONTENT": "👑 Contenido VIP",
-            "FREE_CONTENT": "🌸 Contenido Gratuito"
+            "VIP_PREMIUM": "💎 Premium",
+            "VIP_CONTENT": "🛋️ El Diván",
+            "FREE_CONTENT": "🌸 Promos"
         }.get(pkg_category_str, "📦")
 
         # Format status
@@ -334,9 +334,9 @@ class AdminInterestMessages(BaseMessageProvider):
             "all": "📋 <b>Todos</b> - Muestra todos los intereses",
             "pending": "⏳ <b>Pendientes</b> - Solo intereses sin atender",
             "attended": "✅ <b>Atendidos</b> - Solo intereses ya atendidos",
-            "vip_premium": "💎 <b>Premium</b> - Solo tesoros Premium Exclusivo",
-            "vip_content": "👑 <b>VIP</b> - Solo contenido para miembros",
-            "free_content": "🌸 <b>Gratuito</b> - Solo contenido del jardín público"
+            "vip_premium": "💎 <b>Premium</b> - Solo tesoros Premium",
+            "vip_content": "🛋️ <b>El Diván</b> - Solo contenido para suscriptores",
+            "free_content": "🌸 <b>Promos</b> - Solo promociones"
         }
 
         for filter_key, description in filter_descriptions.items():
@@ -387,8 +387,8 @@ class AdminInterestMessages(BaseMessageProvider):
             body += "<b>🏷️ Por Tipo de Paquete:</b>\n"
             type_names = {
                 "VIP_PREMIUM": "💎 Premium",
-                "VIP_CONTENT": "👑 VIP",
-                "FREE_CONTENT": "🌸 Gratuito"
+                "VIP_CONTENT": "🛋️ El Diván",
+                "FREE_CONTENT": "🌸 Promos"
             }
             for pkg_type, count in by_type.items():
                 name = type_names.get(pkg_type, pkg_type)
@@ -478,8 +478,8 @@ class AdminInterestMessages(BaseMessageProvider):
             "pending": "No hay intereses pendientes de atención en este momento.",
             "attended": "No hay intereses atendidos con este filtro aún.",
             "vip_premium": "Nadie ha mostrado interés en los tesoros Premium aún.",
-            "vip_content": "No hay intereses registrados en contenido VIP.",
-            "free_content": "No hay intereses en contenido gratuito.",
+            "vip_content": "No hay intereses registrados en El Diván.",
+            "free_content": "No hay intereses en promos.",
             "all": "No se encontraron intereses con los filtros seleccionados."
         }
         message = filter_messages.get(
@@ -558,8 +558,8 @@ class AdminInterestMessages(BaseMessageProvider):
                 {"text": "💎 Premium", "callback_data": "admin:interests:list:vip_premium"}
             ],
             [
-                {"text": "👑 VIP", "callback_data": "admin:interests:list:vip_content"},
-                {"text": "🌸 Gratuito", "callback_data": "admin:interests:list:free_content"}
+                {"text": "🛋️ El Diván", "callback_data": "admin:interests:list:vip_content"},
+                {"text": "🌸 Promos", "callback_data": "admin:interests:list:free_content"}
             ],
             [{"text": "🔙 Volver al Menú", "callback_data": "admin:interests"}],
         ])

@@ -562,9 +562,9 @@ class UserMenuMessages(BaseMessageProvider):
         }
 
         category_label = {
-            "VIP_PREMIUM": "Premium Exclusivo",
-            "VIP_CONTENT": "Contenido VIP",
-            "FREE_CONTENT": "Contenido Gratuito"
+            "VIP_PREMIUM": "Premium",
+            "VIP_CONTENT": "El Diván",
+            "FREE_CONTENT": "Promos"
         }
 
         # Get category value (handle both enum and string)
@@ -574,7 +574,7 @@ class UserMenuMessages(BaseMessageProvider):
 
         # Format price
         if package.price is None:
-            price_section = "💰 <b>Precio:</b> Acceso gratuito"
+            price_section = "💰 <b>Precio:</b> Acceso promocional"
         else:
             price_section = f"💰 <b>Precio:</b> ${package.price:.2f}"
 

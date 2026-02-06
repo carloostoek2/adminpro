@@ -323,7 +323,7 @@ async def handle_free_content(callback: CallbackQuery, container):
 
     except Exception as e:
         logger.error(f"Error mostrando contenido Free a {user.id}: {e}", exc_info=True)
-        await callback.answer("⚠️ Error cargando contenido gratuito", show_alert=True)
+        await callback.answer("⚠️ Error cargando promos", show_alert=True)
 
 
 @free_callbacks_router.callback_query(lambda c: c.data == "menu:free:vip")
@@ -421,7 +421,7 @@ async def handle_social_media(callback: CallbackQuery):
             f"• <b>Instagram:</b> @diana_artista (muestras diarias)\n"
             f"• <b>TikTok:</b> @diana.creaciones (tutoriales rápidos)\n"
             f"• <b>YouTube:</b> Diana Creaciones (procesos completos)\n\n"
-            f"<b>🎁 Contenido Gratuito Adicional</b>\n\n"
+            f"<b>🎁 Promos Adicionales</b>\n\n"
             f"• Blog: www.dianacreaciones.com/blog\n"
             f"• Newsletter: Suscripción gratuita\n"
             f"• Comunidad: Grupo público de Telegram\n\n"
@@ -594,13 +594,13 @@ async def _send_admin_interest_notification(
         if package.price is not None:
             notification_text += f"<b>💰 Precio:</b> ${package.price:.2f}"
         else:
-            notification_text += "<b>💰 Precio:</b> Gratuito"
+            notification_text += "<b>💰 Precio:</b> Acceso promocional"
 
         if package.category:
             type_text = {
-                "VIP_PREMIUM": "Premium Exclusivo",
-                "VIP_CONTENT": "Contenido VIP",
-                "FREE_CONTENT": "Contenido Gratuito"
+                "VIP_PREMIUM": "Premium",
+                "VIP_CONTENT": "El Diván",
+                "FREE_CONTENT": "Promos"
             }.get(package.category.value, str(package.category))
             notification_text += f"\n<b>🏷️ Tipo:</b> {type_text}"
 

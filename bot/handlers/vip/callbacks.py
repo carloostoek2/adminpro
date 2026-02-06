@@ -132,7 +132,7 @@ async def handle_vip_free_content(callback: CallbackQuery, container):
 
     except Exception as e:
         logger.error(f"Error mostrando contenido Free a VIP {user.id}: {e}")
-        await callback.answer("⚠️ Error cargando contenido gratuito", show_alert=True)
+        await callback.answer("⚠️ Error cargando promos", show_alert=True)
 
 
 # Register SPECIFIC handlers BEFORE GENERIC ones to avoid pattern matching conflicts
@@ -560,13 +560,13 @@ async def _send_admin_interest_notification(
         if package.price is not None:
             notification_text += f"<b>💰 Precio:</b> ${package.price:.2f}"
         else:
-            notification_text += "<b>💰 Precio:</b> Gratuito"
+            notification_text += "<b>💰 Precio:</b> Acceso promocional"
 
         if package.category:
             type_text = {
-                "VIP_PREMIUM": "Premium Exclusivo",
-                "VIP_CONTENT": "Contenido VIP",
-                "FREE_CONTENT": "Contenido Gratuito"
+                "VIP_PREMIUM": "Premium",
+                "VIP_CONTENT": "El Diván",
+                "FREE_CONTENT": "Promos"
             }.get(package.category.value, str(package.category))
             notification_text += f"\n<b>🏷️ Tipo:</b> {type_text}"
 
