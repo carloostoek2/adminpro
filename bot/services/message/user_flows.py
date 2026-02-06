@@ -367,7 +367,8 @@ class UserFlowMessages(BaseMessageProvider):
         package_name: str,
         user_role: str = "VIP",
         user_id: Optional[int] = None,
-        session_history: Optional["SessionMessageHistory"] = None
+        session_history: Optional["SessionMessageHistory"] = None,
+        source_section: Optional[str] = None
     ) -> tuple[str, InlineKeyboardMarkup]:
         """
         Package interest confirmation message with Diana's personal voice.
@@ -379,9 +380,7 @@ class UserFlowMessages(BaseMessageProvider):
             user_name: User's first name (optional, can be None)
             package_name: Name of the package they're interested in
             user_role: "VIP" or "Free" for navigation context
-        user_name: str,
-        package_name: str,
-        user_role: str = "VIP"
+            source_section: Optional source section ("premium" or "free") for navigation
 
         Returns:
             Tuple of (text, keyboard) with contact and navigation buttons
@@ -434,8 +433,15 @@ class UserFlowMessages(BaseMessageProvider):
         # Secondary actions: Regresar and Inicio buttons
         # Use role-specific prefix to avoid router conflicts
         role_prefix = "vip" if user_role == "VIP" else "free"
+
+        # Build back callback with source section for proper navigation
+        if source_section:
+            back_callback = f"{role_prefix}:packages:back:{user_role}:{source_section}"
+        else:
+            back_callback = f"{role_prefix}:packages:back:{user_role}"
+
         buttons.append([
-            {"text": "📋 Regresar", "callback_data": f"{role_prefix}:packages:back:{user_role}"},
+            {"text": "📋 Regresar", "callback_data": back_callback},
             {"text": "🏠 Inicio", "callback_data": f"menu:{user_role.lower()}:main"}
         ])
 

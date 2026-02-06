@@ -501,7 +501,8 @@ class UserMenuMessages(BaseMessageProvider):
         package: ContentPackage,
         user_role: str = "VIP",
         user_id: Optional[int] = None,
-        session_history: Optional["SessionMessageHistory"] = None
+        session_history: Optional["SessionMessageHistory"] = None,
+        source_section: Optional[str] = None
     ) -> Tuple[str, InlineKeyboardMarkup]:
         """
         Generate detailed package view with all user-facing information.
@@ -511,14 +512,15 @@ class UserMenuMessages(BaseMessageProvider):
             user_role: User role for context-aware messages ("VIP" or "Free")
             user_id: Optional Telegram user ID for session-aware selection
             session_history: Optional SessionMessageHistory for context awareness
+            source_section: Optional source section ("premium" or "free") for navigation
 
         Returns:
             Tuple of (text, keyboard) for package detail view
 
         Voice Rationale:
             Shows complete package information before user registers interest.
-            Price formatted elegantly: "Acceso gratuito" for None, "$X.XX" for paid.
-            Category badges with emoji: VIP_PREMIUM="💎", VIP_CONTENT="👑", FREE_CONTENT="🌸".
+            Price formatted elegantly: "Acceso promocional" for None, "$X.XX" for paid.
+            Category badges with emoji: VIP_PREMIUM="💎", VIP_CONTENT="🛋️", FREE_CONTENT="🌸".
             Lucien's closing adapts to user role ("círculo" for VIP, "jardín" for Free).
 
         Examples:
@@ -599,12 +601,19 @@ class UserMenuMessages(BaseMessageProvider):
             [{"text": "⭐ Me interesa", "callback_data": f"{role_prefix}:package:interest:{package.id}"}]
         ]
 
+        # Build back callback with source section for proper navigation
+        # source_section helps determine where to return (premium vs free section)
+        if source_section:
+            back_callback = f"{role_prefix}:packages:back:{user_role}:{source_section}"
+        else:
+            back_callback = f"{role_prefix}:packages:back"
+
         keyboard = create_content_with_navigation(
             content_buttons,
             include_back=True,
             include_exit=False,  # Only back button, no exit
             back_text="⬅️ Volver",
-            back_callback=f"{role_prefix}:packages:back"
+            back_callback=back_callback
         )
 
         return text, keyboard

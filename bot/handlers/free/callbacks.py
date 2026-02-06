@@ -92,16 +92,20 @@ async def handle_packages_back_to_list(callback: CallbackQuery, container):
 @free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("free:packages:back:"))
 async def handle_packages_back_with_role(callback: CallbackQuery, container):
     """
-    Vuelve al listado de paquetes desde confirmación de interés (con user_role).
+    Vuelve al listado de paquetes desde confirmación de interés (con user_role y source_section).
 
-    Callback data format: "free:packages:back:{user_role}"
+    Callback data formats:
+    - "free:packages:back:{user_role}" (legacy)
+    - "free:packages:back:{user_role}:{source_section}" (new)
 
-    Ignora el user_role y siempre vuelve al listado Free (router Free).
+    Siempre vuelve al listado Free (router Free).
 
     Args:
         callback: CallbackQuery de Telegram
         container: ServiceContainer inyectado por middleware
     """
+    # Free users always return to free content section
+    # No need to parse source_section as Free users only have one section
     await handle_free_content(callback, container)
 
 
@@ -143,11 +147,13 @@ async def handle_package_detail(callback: CallbackQuery, container):
             logger.warning(f"No se pudo obtener contexto de sesión para {user.id}: {e}")
 
         # Generate detail view using UserMenuMessages
+        # Pass source_section="free" to ensure back button returns to free content section
         text, keyboard = container.message.user.menu.package_detail_view(
             package=package,
             user_role="Free",
             user_id=user.id,
-            session_history=session_ctx
+            session_history=session_ctx,
+            source_section="free"
         )
 
         # Update message with detail view
@@ -239,12 +245,14 @@ async def handle_package_interest_confirm(callback: CallbackQuery, container):
                 logger.warning(f"No se pudo obtener contexto de sesión para {user.id}: {e}")
 
             # Generate confirmation message with contact button
+            # source_section="free" ensures back button returns to free content section
             text, keyboard = container.message.user.flows.package_interest_confirmation(
                 user_name=user.first_name or "Usuario",
                 package_name=package.name,
                 user_role="Free",
                 user_id=user.id,
-                session_history=session_ctx
+                session_history=session_ctx,
+                source_section="free"
             )
 
             # Update message with confirmation

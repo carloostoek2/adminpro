@@ -155,17 +155,36 @@ async def handle_packages_back_to_list(callback: CallbackQuery, container):
 @vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("vip:packages:back:"))
 async def handle_packages_back_with_role(callback: CallbackQuery, container):
     """
-    Vuelve al listado de paquetes desde confirmación de interés (con user_role).
+    Vuelve al listado de paquetes desde confirmación de interés (con user_role y source_section).
 
-    Callback data format: "vip:packages:back:{user_role}"
-
-    Ignora el user_role y siempre vuelve al listado VIP (router VIP).
+    Callback data formats:
+    - "vip:packages:back:{user_role}" (legacy, defaults to premium)
+    - "vip:packages:back:{user_role}:{source_section}" (new, source_section="premium" or "free")
 
     Args:
         callback: CallbackQuery de Telegram
         container: ServiceContainer inyectado por middleware
     """
-    await handle_vip_premium(callback, container)
+    try:
+        # Parse callback data to extract source_section
+        # Format: vip:packages:back:VIP:source_section or vip:packages:back:VIP
+        parts = callback.data.split(":")
+
+        # Check if source_section is provided (new format)
+        if len(parts) >= 5:
+            source_section = parts[4]
+            if source_section == "free":
+                await handle_vip_free_content(callback, container)
+                return
+            # If premium or unknown, fall through to premium handler
+
+        # Default: return to premium section
+        await handle_vip_premium(callback, container)
+
+    except Exception as e:
+        logger.error(f"Error parsing back callback {callback.data}: {e}")
+        # Fallback to premium section on error
+        await handle_vip_premium(callback, container)
 
 
 @vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("vip:packages:"))
@@ -207,11 +226,13 @@ async def handle_package_detail(callback: CallbackQuery, container):
         session_ctx = container.message.get_session_context(container)
 
         # Generate detail view using UserMenuMessages
+        # Pass source_section="premium" to ensure back button returns to premium section
         text, keyboard = container.message.user.menu.package_detail_view(
             package=package,
             user_role="VIP",
             user_id=user.id,
-            session_history=session_ctx
+            session_history=session_ctx,
+            source_section="premium"
         )
 
         # Update message with detail view
@@ -304,12 +325,14 @@ async def handle_package_interest_confirm(callback: CallbackQuery, container):
             session_ctx = container.message.get_session_context(container)
 
             # Generate confirmation message with contact button
+            # source_section="premium" ensures back button returns to premium section
             text, keyboard = container.message.user.flows.package_interest_confirmation(
                 user_name=user.first_name or "Usuario",
                 package_name=package.name,
                 user_role="VIP",
                 user_id=user.id,
-                session_history=session_ctx
+                session_history=session_ctx,
+                source_section="premium"
             )
 
             # Update message with confirmation
@@ -759,11 +782,13 @@ async def handle_vip_free_package_detail(callback: CallbackQuery, container):
 
         # Generate detail view using UserMenuMessages with VIP context
         # Pass user_role="VIP" so the message uses VIP voice
+        # Pass source_section="free" to ensure back button returns to free content section
         text, keyboard = container.message.user.menu.package_detail_view(
             package=package,
             user_role="VIP",
             user_id=user.id,
-            session_history=session_ctx
+            session_history=session_ctx,
+            source_section="free"
         )
 
         # Update message with detail view
@@ -842,12 +867,14 @@ async def handle_vip_free_package_interest(callback: CallbackQuery, container):
             session_ctx = container.message.get_session_context(container)
 
             # Generate confirmation message with contact button
+            # source_section="free" ensures back button returns to free content section
             text, keyboard = container.message.user.flows.package_interest_confirmation(
                 user_name=user.first_name or "Usuario",
                 package_name=package.name,
                 user_role="VIP",
                 user_id=user.id,
-                session_history=session_ctx
+                session_history=session_ctx,
+                source_section="free"
             )
 
             # Update message with confirmation
