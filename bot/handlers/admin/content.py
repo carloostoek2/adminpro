@@ -9,11 +9,15 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.database.enums import PackageType
+from bot.database.enums import ContentCategory, PackageType
+from bot.database.models import ContentPackage
 from bot.middlewares import DatabaseMiddleware
 from bot.services.container import ServiceContainer
 from bot.states.admin import ContentPackageStates
-from bot.utils.pagination import Paginator, create_pagination_keyboard, format_page_header, format_items_list
+from bot.utils.pagination import Paginator, create_pagination_keyboard
+from bot.utils.keyboards import create_inline_keyboard
+from typing import List
+from aiogram.types import InlineKeyboardMarkup
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +27,90 @@ content_router = Router(name="admin_content")
 # Apply middleware (AdminAuth already on admin_router, this integrates into it)
 content_router.callback_query.middleware(DatabaseMiddleware())
 content_router.message.middleware(DatabaseMiddleware())
+
+
+# ===== HELPER FUNCTIONS =====
+
+def _get_category_emoji(category) -> str:
+    """Get emoji for content category.
+
+    Args:
+        category: ContentCategory enum or string representation
+
+    Returns:
+        Emoji string for the category
+    """
+    if not category:
+        return "🆓"
+
+    category_str = str(category).lower()
+    if "vip_premium" in category_str:
+        return "💎"
+    elif "vip" in category_str:
+        return "⭐"
+    else:
+        return "🆓"
+
+
+def _create_package_list_keyboard(
+    packages: List[ContentPackage],
+    page,
+    callback_pattern: str = "admin:content:page:{page}",
+    back_callback: str = "admin:content"
+) -> InlineKeyboardMarkup:
+    """Create keyboard with package buttons and pagination.
+
+    Args:
+        packages: List of ContentPackage objects
+        page: Page object with pagination info
+        callback_pattern: Pattern for pagination callbacks
+        back_callback: Callback for back button
+
+    Returns:
+        InlineKeyboardMarkup with package buttons and pagination
+    """
+    buttons = []
+
+    # Add package buttons - one per row
+    for package in packages:
+        emoji = _get_category_emoji(package.category)
+        button_text = f"{emoji} {package.name}"
+        callback_data = f"admin:content:view:{package.id}"
+        buttons.append([{"text": button_text, "callback_data": callback_data}])
+
+    # Navigation row
+    nav_row = []
+
+    # "Previous" button (only if there's a previous page)
+    if page.has_previous:
+        prev_callback = callback_pattern.format(page=page.current_page - 1)
+        nav_row.append({
+            "text": "◀️ Anterior",
+            "callback_data": prev_callback
+        })
+
+    # Page info button
+    nav_row.append({
+        "text": f"Página {page.current_page}/{page.total_pages}",
+        "callback_data": f"pagination:info:{page.current_page}"
+    })
+
+    # "Next" button (only if there's a next page)
+    if page.has_next:
+        next_callback = callback_pattern.format(page=page.current_page + 1)
+        nav_row.append({
+            "text": "Siguiente ▶️",
+            "callback_data": next_callback
+        })
+
+    # Add navigation row only if it's not empty
+    if nav_row:
+        buttons.append(nav_row)
+
+    # "Back" button
+    buttons.append([{"text": "🔙 Volver", "callback_data": back_callback}])
+
+    return create_inline_keyboard(buttons)
 
 
 # ===== MENU NAVIGATION =====
@@ -105,21 +193,12 @@ async def callback_content_list(callback: CallbackQuery, session: AsyncSession):
     paginator = Paginator(items=all_packages, page_size=10)
     page = paginator.get_first_page()
 
-    # Format display using AdminContentMessages
-    text, keyboard = container.message.admin.content.content_list_header()
+    # Get header text
+    text, _ = container.message.admin.content.content_list_header()
 
-    # Add package summaries to text
-    packages_text = format_items_list(
-        page.items,
-        lambda pkg, idx: container.message.admin.content.package_summary(pkg),
-        separator="\n\n"
-    )
-
-    # Combine header with packages
-    full_text = f"{text}\n\n{packages_text}"
-
-    # Create pagination keyboard
-    keyboard = create_pagination_keyboard(
+    # Create keyboard with package buttons and pagination
+    keyboard = _create_package_list_keyboard(
+        packages=page.items,
         page=page,
         callback_pattern="admin:content:page:{page}",
         back_callback="admin:content"
@@ -127,7 +206,7 @@ async def callback_content_list(callback: CallbackQuery, session: AsyncSession):
 
     try:
         await callback.message.edit_text(
-            text=full_text,
+            text=text,
             reply_markup=keyboard,
             parse_mode="HTML"
         )
@@ -173,21 +252,12 @@ async def callback_content_page(callback: CallbackQuery, session: AsyncSession):
 
     page = paginator.get_page(page_num)
 
-    # Format display using AdminContentMessages
-    text, keyboard = container.message.admin.content.content_list_header()
+    # Get header text
+    text, _ = container.message.admin.content.content_list_header()
 
-    # Add package summaries to text
-    packages_text = format_items_list(
-        page.items,
-        lambda pkg, idx: container.message.admin.content.package_summary(pkg),
-        separator="\n\n"
-    )
-
-    # Combine header with packages
-    full_text = f"{text}\n\n{packages_text}"
-
-    # Create pagination keyboard
-    keyboard = create_pagination_keyboard(
+    # Create keyboard with package buttons and pagination
+    keyboard = _create_package_list_keyboard(
+        packages=page.items,
         page=page,
         callback_pattern="admin:content:page:{page}",
         back_callback="admin:content"
@@ -195,7 +265,7 @@ async def callback_content_page(callback: CallbackQuery, session: AsyncSession):
 
     try:
         await callback.message.edit_text(
-            text=full_text,
+            text=text,
             reply_markup=keyboard,
             parse_mode="HTML"
         )
