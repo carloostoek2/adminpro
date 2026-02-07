@@ -17,6 +17,9 @@ from bot.database.enums import UserRole
 async def test_db():
     """
     Fixture: Provides an isolated in-memory database for each test.
+
+    IMPORTANT: This fixture creates a completely isolated in-memory database.
+    It does NOT use bot.db, ensuring tests never contaminate production data.
     """
     engine = create_async_engine(
         "sqlite+aiosqlite:///:memory:",
@@ -24,6 +27,15 @@ async def test_db():
         future=True,
         connect_args={"check_same_thread": False}
     )
+
+    # SAFETY CHECK: Verify we're using in-memory database
+    db_url = str(engine.url)
+    if ":memory:" not in db_url:
+        raise RuntimeError(
+            f"SAFETY ERROR: Tests must use in-memory database! "
+            f"Current URL: {db_url}. "
+            f"Check that no test imports are overriding the database configuration."
+        )
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

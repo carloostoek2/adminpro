@@ -12,15 +12,13 @@ Responsabilidades:
 Pattern: Sigue estructura de VIP callbacks con router separado.
 """
 import logging
-from datetime import datetime
-from typing import Dict, Any
 
 from aiogram import Router
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import CallbackQuery
 
 from bot.database.enums import ContentCategory
+from bot.handlers.utils import send_admin_interest_notification
 from bot.middlewares import DatabaseMiddleware
-from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +73,7 @@ async def handle_free_approved_enter(callback: CallbackQuery, container):
 # Register SPECIFIC handlers BEFORE GENERIC ones to avoid pattern matching conflicts
 # "user:packages:back" must be registered before "user:packages:{id}"
 
-@free_callbacks_router.callback_query(lambda c: c.data == "user:packages:back")
+@free_callbacks_router.callback_query(lambda c: c.data == "free:packages:back")
 async def handle_packages_back_to_list(callback: CallbackQuery, container):
     """
     Vuelve al listado de paquetes Free (desde vista de detalle o confirmación).
@@ -89,23 +87,27 @@ async def handle_packages_back_to_list(callback: CallbackQuery, container):
     await handle_free_content(callback, container)
 
 
-@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:packages:back:"))
+@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("free:packages:back:"))
 async def handle_packages_back_with_role(callback: CallbackQuery, container):
     """
-    Vuelve al listado de paquetes desde confirmación de interés (con user_role).
+    Vuelve al listado de paquetes desde confirmación de interés (con user_role y source_section).
 
-    Callback data format: "user:packages:back:{user_role}"
+    Callback data formats:
+    - "free:packages:back:{user_role}" (legacy)
+    - "free:packages:back:{user_role}:{source_section}" (new)
 
-    Ignora el user_role y siempre vuelve al listado Free (router Free).
+    Siempre vuelve al listado Free (router Free).
 
     Args:
         callback: CallbackQuery de Telegram
         container: ServiceContainer inyectado por middleware
     """
+    # Free users always return to free content section
+    # No need to parse source_section as Free users only have one section
     await handle_free_content(callback, container)
 
 
-@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:packages:"))
+@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("free:packages:"))
 async def handle_package_detail(callback: CallbackQuery, container):
     """
     Muestra vista detallada de un paquete específico.
@@ -143,11 +145,13 @@ async def handle_package_detail(callback: CallbackQuery, container):
             logger.warning(f"No se pudo obtener contexto de sesión para {user.id}: {e}")
 
         # Generate detail view using UserMenuMessages
+        # Pass source_section="free" to ensure back button returns to free content section
         text, keyboard = container.message.user.menu.package_detail_view(
             package=package,
             user_role="Free",
             user_id=user.id,
-            session_history=session_ctx
+            session_history=session_ctx,
+            source_section="free"
         )
 
         # Update message with detail view
@@ -164,7 +168,7 @@ async def handle_package_detail(callback: CallbackQuery, container):
         await callback.answer("⚠️ Error cargando detalles del paquete", show_alert=True)
 
 
-@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:package:interest:"))
+@free_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("free:package:interest:"))
 async def handle_package_interest_confirm(callback: CallbackQuery, container):
     """
     Registra interés en paquete y muestra mensaje de confirmación con contacto directo.
@@ -221,8 +225,8 @@ async def handle_package_interest_confirm(callback: CallbackQuery, container):
                 f"(status: {status})"
             )
 
-            # Send admin notification (reuse existing function)
-            await _send_admin_interest_notification(
+            # Send admin notification (using shared function)
+            await send_admin_interest_notification(
                 bot=callback.bot,
                 container=container,
                 user=user,
@@ -239,12 +243,14 @@ async def handle_package_interest_confirm(callback: CallbackQuery, container):
                 logger.warning(f"No se pudo obtener contexto de sesión para {user.id}: {e}")
 
             # Generate confirmation message with contact button
+            # source_section="free" ensures back button returns to free content section
             text, keyboard = container.message.user.flows.package_interest_confirmation(
                 user_name=user.first_name or "Usuario",
                 package_name=package.name,
                 user_role="Free",
                 user_id=user.id,
-                session_history=session_ctx
+                session_history=session_ctx,
+                source_section="free"
             )
 
             # Update message with confirmation
@@ -323,7 +329,7 @@ async def handle_free_content(callback: CallbackQuery, container):
 
     except Exception as e:
         logger.error(f"Error mostrando contenido Free a {user.id}: {e}", exc_info=True)
-        await callback.answer("⚠️ Error cargando contenido gratuito", show_alert=True)
+        await callback.answer("⚠️ Error cargando promos", show_alert=True)
 
 
 @free_callbacks_router.callback_query(lambda c: c.data == "menu:free:vip")
@@ -421,7 +427,7 @@ async def handle_social_media(callback: CallbackQuery):
             f"• <b>Instagram:</b> @diana_artista (muestras diarias)\n"
             f"• <b>TikTok:</b> @diana.creaciones (tutoriales rápidos)\n"
             f"• <b>YouTube:</b> Diana Creaciones (procesos completos)\n\n"
-            f"<b>🎁 Contenido Gratuito Adicional</b>\n\n"
+            f"<b>🎁 Promos Adicionales</b>\n\n"
             f"• Blog: www.dianacreaciones.com/blog\n"
             f"• Newsletter: Suscripción gratuita\n"
             f"• Comunidad: Grupo público de Telegram\n\n"
@@ -500,8 +506,8 @@ async def handle_package_interest(callback: CallbackQuery, container):
                 f"(status: {status})"
             )
 
-            # Send admin notification
-            await _send_admin_interest_notification(
+            # Send admin notification (using shared function)
+            await send_admin_interest_notification(
                 bot=callback.bot,
                 container=container,
                 user=user,
@@ -542,134 +548,6 @@ async def handle_package_interest(callback: CallbackQuery, container):
         await callback.answer("⚠️ Error registrando interés", show_alert=True)
 
 
-async def _send_admin_interest_notification(
-    bot,
-    container,
-    user,
-    package,
-    interest,
-    user_role: str
-):
-    """
-    Envía notificación privada a todos los admins sobre nuevo interés.
-
-    Nota: Esta función es idéntica a la versión VIP para consistencia.
-    En el futuro podría extraerse a un módulo compartido.
-
-    Args:
-        bot: Instancia del bot
-        container: ServiceContainer
-        user: Usuario de Telegram (callback.from_user)
-        package: Objeto ContentPackage
-        interest: Objeto UserInterest
-        user_role: "VIP" o "Free"
-    """
-    try:
-        # Get all admin user IDs from config (environment variable)
-        admin_ids = Config.ADMIN_USER_IDS
-
-        if not admin_ids:
-            logger.warning("⚠️ No admins configured for interest notifications")
-            return
-
-        # Format user info
-        username = f"@{user.username}" if user.username else f"usuario {user.id}"
-        user_link = f"tg://user?id={user.id}"
-
-        # Format package info
-        package_type_emoji = {
-            "VIP_PREMIUM": "💎",
-            "VIP_CONTENT": "👑",
-            "FREE_CONTENT": "🌸"
-        }.get(package.category.value if hasattr(package.category, 'value') else str(package.category), "📦")
-
-        # Build notification message in Lucien's voice
-        notification_text = (
-            f"🎩 <b>Lucien:</b> <i>Nueva expresión de interés detectada...</i>\n\n"
-            f"<b>👤 Visitante:</b> {username} ({user_role})\n"
-            f"<b>📦 Tesoro de interés:</b> {package_type_emoji} {package.name}\n"
-            f"<b>📝 Descripción:</b> {package.description or 'Sin descripción'}\n"
-        )
-
-        if package.price is not None:
-            notification_text += f"<b>💰 Precio:</b> ${package.price:.2f}"
-        else:
-            notification_text += "<b>💰 Precio:</b> Gratuito"
-
-        if package.category:
-            type_text = {
-                "VIP_PREMIUM": "Premium Exclusivo",
-                "VIP_CONTENT": "Contenido VIP",
-                "FREE_CONTENT": "Contenido Gratuito"
-            }.get(package.category.value, str(package.category))
-            notification_text += f"\n<b>🏷️ Tipo:</b> {type_text}"
-
-        notification_text += (
-            f"\n\n<b>⏰ Momento:</b> {interest.created_at.strftime('%Y-%m-%d %H:%M')}\n"
-            f"<i>Diana, un visitante del jardín ha mostrado interés en uno de sus tesoros...</i>"
-        )
-
-        # Create inline keyboard with action buttons
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="📋 Ver Todos los Intereses",
-                    callback_data=f"admin:interests:list:pending"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="✅ Marcar como Atendido",
-                    callback_data=f"admin:interest:attend:{interest.id}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="💬 Mensaje al Usuario",
-                    url=user_link
-                ),
-                InlineKeyboardButton(
-                    text="🚫 Bloquear Contacto",
-                    callback_data=f"admin:user:block_contact:{user.id}"
-                )
-            ]
-        ])
-
-        # Send notification to all admins
-        sent_count = 0
-        failed_admins = []
-
-        for admin_id in admin_ids:
-            try:
-                await bot.send_message(
-                    chat_id=admin_id,
-                    text=notification_text,
-                    parse_mode="HTML",
-                    reply_markup=keyboard
-                )
-                sent_count += 1
-                logger.debug(f"📤 Interest notification sent to admin {admin_id}")
-            except Exception as e:
-                logger.error(
-                    f"❌ Failed to send interest notification to admin {admin_id}: {e}"
-                )
-                failed_admins.append(admin_id)
-
-        logger.info(
-            f"📢 Interest notification sent to {sent_count}/{len(admin_ids)} admins "
-            f"(user: {user.id}, package: {package.id}, role: {user_role})"
-        )
-
-        if failed_admins:
-            logger.warning(
-                f"⚠️ Failed to send to admins: {failed_admins} "
-                f"(may have blocked the bot or deleted chat)"
-            )
-
-    except Exception as e:
-        logger.error(f"Error sending admin interest notification: {e}", exc_info=True)
-
-
 @free_callbacks_router.callback_query(lambda c: c.data == "menu:free:main")
 async def handle_menu_back(callback: CallbackQuery, container):
     """
@@ -698,7 +576,8 @@ async def handle_menu_back(callback: CallbackQuery, container):
             callback.message,
             data,
             user_id=user.id,
-            user_first_name=user.first_name
+            user_first_name=user.first_name,
+            edit_mode=True
         )
         await callback.answer()
     except Exception as e:

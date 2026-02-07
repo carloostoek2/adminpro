@@ -5,10 +5,10 @@ Provides messages for content package management UI with Lucien's voice.
 All messages maintain Lucien's sophisticated mayordomo voice from docs/guia-estilo.md.
 """
 from typing import Tuple, Optional, Any
-from datetime import datetime
 
 from aiogram.types import InlineKeyboardMarkup
 
+from bot.database.enums import ContentCategory
 from bot.services.message.base import BaseMessageProvider
 from bot.utils.keyboards import create_inline_keyboard
 
@@ -147,24 +147,21 @@ class AdminContentMessages(BaseMessageProvider):
             >>> 'Test Pack' in summary
             True
         """
-        # Get category info
-        category_emoji = "🆓"
-        category_name = "Gratuito"
+        # Get category info using enum properties directly
         if package.category:
-            category_str = str(package.category)
-            if "vip" in category_str and "premium" in category_str:
-                category_emoji = "💎"
-                category_name = "VIP Premium"
-            elif "vip" in category_str:
-                category_emoji = "⭐"
-                category_name = "VIP"
+            category_emoji = package.category.emoji
+            category_name = package.category.display_name
+        else:
+            # Fallback for packages without a category
+            category_emoji = "📦"
+            category_name = "Sin categoría"
 
         # Status indicator
         status_emoji = "✅" if package.is_active else "🚫"
         status_text = "Activo" if package.is_active else "Inactivo"
 
         # Price display
-        price_text = "Gratis"
+        price_text = "Promo"
         if package.price is not None:
             price_text = f"${package.price:.2f}"
 
@@ -216,27 +213,21 @@ class AdminContentMessages(BaseMessageProvider):
             >>> 'Test Pack' in text
             True
         """
-        # Get category info
-        category_emoji = "🆓"
-        category_name = "Contenido Gratuito"
+        # Get category info using enum properties directly
         if package.category:
-            category_str = str(package.category)
-            if "vip_premium" in category_str:
-                category_emoji = "💎"
-                category_name = "VIP Premium"
-            elif "vip_content" in category_str:
-                category_emoji = "⭐"
-                category_name = "Contenido VIP"
-            elif "free_content" in category_str:
-                category_emoji = "🆓"
-                category_name = "Contenido Gratuito"
+            category_emoji = package.category.emoji
+            category_name = package.category.display_name
+        else:
+            # Fallback for packages without a category
+            category_emoji = "📦"
+            category_name = "Sin categoría"
 
         # Status indicator
         status_emoji = "✅" if package.is_active else "🚫"
         status_text = "Activo" if package.is_active else "Inactivo"
 
         # Price display
-        price_text = "Gratis"
+        price_text = "Promo"
         if package.price is not None:
             price_text = f"${package.price:.2f}"
 
@@ -371,11 +362,11 @@ class AdminContentMessages(BaseMessageProvider):
         text = self._compose(header, body)
         keyboard = create_inline_keyboard([
             [
-                {"text": "🆓 Contenido Gratuito", "callback_data": "admin:content:create:type:free_content"},
-                {"text": "⭐ Contenido VIP", "callback_data": "admin:content:create:type:vip_content"}
+                {"text": "🌸 Promos", "callback_data": "admin:content:create:type:free_content"},
+                {"text": "🛋️ El Diván", "callback_data": "admin:content:create:type:vip_content"}
             ],
             [
-                {"text": "💎 VIP Premium", "callback_data": "admin:content:create:type:vip_premium"},
+                {"text": "💎 Premium", "callback_data": "admin:content:create:type:vip_premium"},
             ],
             [{"text": "❌ Cancelar", "callback_data": "admin:content"}],
         ])
@@ -398,7 +389,7 @@ class AdminContentMessages(BaseMessageProvider):
             f"<b>➕ Paso 3/4: Precio (Opcional)</b>\n\n"
             f"<i>Asigne un precio a este paquete, si corresponde.</i>\n\n"
             f"<i>Puede enviar un valor numérico (ej: 9.99) o /skip para omitir "
-            f"y dejar el contenido gratuito.</i>\n\n"
+            f"y dejar el acceso promocional.</i>\n\n"
             f"<b>Envíe el precio o /skip:</b>"
         )
 

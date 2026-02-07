@@ -19,7 +19,7 @@ from bot.database.enums import ContentCategory
 logger = logging.getLogger(__name__)
 
 
-async def show_vip_menu(message: Message, data: Dict[str, Any], user_id: int = None, user_first_name: str = None):
+async def show_vip_menu(message: Message, data: Dict[str, Any], user_id: int = None, user_first_name: str = None, edit_mode: bool = False):
     """
     Muestra el menú VIP usando UserMenuProvider para mensajes con voz de Lucien.
 
@@ -27,10 +27,11 @@ async def show_vip_menu(message: Message, data: Dict[str, Any], user_id: int = N
     redirects to entry flow instead of showing VIP menu.
 
     Args:
-        message: Mensaje de Telegram
+        message: Mensaje de Telegram (o callback message para edit_mode)
         data: Data del handler (incluye container, session, etc.)
         user_id: ID del usuario (opcional, si no se proporciona usa message.from_user.id)
         user_first_name: Nombre del usuario (opcional, si no se proporciona usa message.from_user.first_name)
+        edit_mode: Si True, edita el mensaje actual en lugar de enviar uno nuevo (para callbacks)
 
     Note:
         When called from callbacks, message.from_user may be the bot itself.
@@ -93,5 +94,10 @@ async def show_vip_menu(message: Message, data: Dict[str, Any], user_id: int = N
         session_history=session_ctx
     )
 
-    await message.answer(text, parse_mode="HTML", reply_markup=keyboard)
-    logger.info(f"⭐ Menú VIP mostrado a {target_user_id} (voz de Lucien)")
+    # Use edit_text when in edit_mode (for callback handlers), otherwise send new message
+    if edit_mode:
+        await message.edit_text(text, parse_mode="HTML", reply_markup=keyboard)
+        logger.info(f"⭐ Menú VIP editado para {target_user_id} (voz de Lucien)")
+    else:
+        await message.answer(text, parse_mode="HTML", reply_markup=keyboard)
+        logger.info(f"⭐ Menú VIP mostrado a {target_user_id} (voz de Lucien)")

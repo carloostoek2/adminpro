@@ -3,22 +3,23 @@ VIP Callback Handlers - Gestión de interacciones del menú VIP.
 
 Responsabilidades:
 - Manejar callback "vip:premium" - mostrar sección premium
-- Manejar callback "interest:package:{id}" - registrar interés en paquete
+- Manejar callback "vip:free_content" - VIP accediendo a contenido Free
+- Manejar callback "vip:packages:*" - navegación de paquetes VIP
+- Manejar callback "vip:free:packages:*" - VIP viendo paquetes Free
+- Manejar callback "vip:package:interest:*" - registrar interés VIP
 - Manejar callback "menu:back" - volver al menú principal VIP
 - Manejar callback "menu:exit" - cerrar menú
 
 Pattern: Sigue estructura de admin callbacks con router separado.
 """
 import logging
-from datetime import datetime
-from typing import Dict, Any
 
 from aiogram import Router
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import CallbackQuery
 
-from bot.database.enums import ContentCategory
+from bot.database.enums import ContentCategory, UserRole
+from bot.handlers.utils import send_admin_interest_notification, require_vip
 from bot.middlewares import DatabaseMiddleware
-from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,11 @@ async def handle_vip_premium(callback: CallbackQuery, container):
 
     if not container:
         await callback.answer("⚠️ Error: servicio no disponible", show_alert=True)
+        return
+
+    # VALIDACIÓN: Solo VIP/Admin puede acceder
+    has_access = await require_vip(callback, container, redirect=True)
+    if not has_access:
         return
 
     try:
@@ -74,10 +80,62 @@ async def handle_vip_premium(callback: CallbackQuery, container):
         await callback.answer("⚠️ Error cargando contenido premium", show_alert=True)
 
 
-# Register SPECIFIC handlers BEFORE GENERIC ones to avoid pattern matching conflicts
-# "user:packages:back" must be registered before "user:packages:{id}"
+@vip_callbacks_router.callback_query(lambda c: c.data == "vip:free_content")
+async def handle_vip_free_content(callback: CallbackQuery, container):
+    """
+    Muestra contenido Free a un usuario VIP.
 
-@vip_callbacks_router.callback_query(lambda c: c.data == "user:packages:back")
+    Permite que los usuarios VIP accedan al contenido Free desde su menú.
+    Reutiliza la lógica de free_content_section pero con callbacks vip:free:*
+
+    Args:
+        callback: CallbackQuery de Telegram
+        container: ServiceContainer inyectado por middleware
+    """
+    user = callback.from_user
+
+    if not container:
+        await callback.answer("⚠️ Error: servicio no disponible", show_alert=True)
+        return
+
+    # VALIDACIÓN: Solo VIP/Admin puede acceder
+    has_access = await require_vip(callback, container, redirect=True)
+    if not has_access:
+        return
+
+    try:
+        # Get active FREE_CONTENT packages
+        packages = await container.content.get_active_packages(
+            category=ContentCategory.FREE_CONTENT,
+            limit=20
+        )
+
+        # Get session context for message variations
+        session_ctx = container.message.get_session_context(container)
+
+        # Generate Free content section for VIP using dedicated method
+        text, keyboard = container.message.user.menu.vip_free_content_section(
+            user_name=user.first_name or "miembro",
+            packages=packages,
+            user_id=user.id,
+            session_history=session_ctx
+        )
+
+        # Update message with Free content section
+        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboard)
+        await callback.answer()
+
+        logger.info(f"🌸 Sección Free mostrada a VIP {user.id} ({len(packages)} paquetes)")
+
+    except Exception as e:
+        logger.error(f"Error mostrando contenido Free a VIP {user.id}: {e}")
+        await callback.answer("⚠️ Error cargando promos", show_alert=True)
+
+
+# Register SPECIFIC handlers BEFORE GENERIC ones to avoid pattern matching conflicts
+# "vip:packages:back" must be registered before "vip:packages:{id}"
+
+@vip_callbacks_router.callback_query(lambda c: c.data == "vip:packages:back")
 async def handle_packages_back_to_list(callback: CallbackQuery, container):
     """
     Vuelve al listado de paquetes VIP (desde vista de detalle o confirmación).
@@ -91,28 +149,47 @@ async def handle_packages_back_to_list(callback: CallbackQuery, container):
     await handle_vip_premium(callback, container)
 
 
-@vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:packages:back:"))
+@vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("vip:packages:back:"))
 async def handle_packages_back_with_role(callback: CallbackQuery, container):
     """
-    Vuelve al listado de paquetes desde confirmación de interés (con user_role).
+    Vuelve al listado de paquetes desde confirmación de interés (con user_role y source_section).
 
-    Callback data format: "user:packages:back:{user_role}"
-
-    Ignora el user_role y siempre vuelve al listado VIP (router VIP).
+    Callback data formats:
+    - "vip:packages:back:{user_role}" (legacy, defaults to premium)
+    - "vip:packages:back:{user_role}:{source_section}" (new, source_section="premium" or "free")
 
     Args:
         callback: CallbackQuery de Telegram
         container: ServiceContainer inyectado por middleware
     """
-    await handle_vip_premium(callback, container)
+    try:
+        # Parse callback data to extract source_section
+        # Format: vip:packages:back:VIP:source_section or vip:packages:back:VIP
+        parts = callback.data.split(":")
+
+        # Check if source_section is provided (new format)
+        if len(parts) >= 5:
+            source_section = parts[4]
+            if source_section == "free":
+                await handle_vip_free_content(callback, container)
+                return
+            # If premium or unknown, fall through to premium handler
+
+        # Default: return to premium section
+        await handle_vip_premium(callback, container)
+
+    except Exception as e:
+        logger.error(f"Error parsing back callback {callback.data}: {e}")
+        # Fallback to premium section on error
+        await handle_vip_premium(callback, container)
 
 
-@vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:packages:"))
+@vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("vip:packages:"))
 async def handle_package_detail(callback: CallbackQuery, container):
     """
     Muestra vista detallada de un paquete específico.
 
-    Callback data format: "user:packages:{package_id}"
+    Callback data format: "vip:packages:{package_id}"
 
     Args:
         callback: CallbackQuery de Telegram
@@ -122,6 +199,11 @@ async def handle_package_detail(callback: CallbackQuery, container):
 
     if not container:
         await callback.answer("⚠️ Error: servicio no disponible", show_alert=True)
+        return
+
+    # VALIDACIÓN: Solo VIP/Admin puede acceder
+    has_access = await require_vip(callback, container, redirect=True)
+    if not has_access:
         return
 
     try:
@@ -141,11 +223,13 @@ async def handle_package_detail(callback: CallbackQuery, container):
         session_ctx = container.message.get_session_context(container)
 
         # Generate detail view using UserMenuMessages
+        # Pass source_section="premium" to ensure back button returns to premium section
         text, keyboard = container.message.user.menu.package_detail_view(
             package=package,
             user_role="VIP",
             user_id=user.id,
-            session_history=session_ctx
+            session_history=session_ctx,
+            source_section="premium"
         )
 
         # Update message with detail view
@@ -162,7 +246,7 @@ async def handle_package_detail(callback: CallbackQuery, container):
         await callback.answer("⚠️ Error cargando detalles del paquete", show_alert=True)
 
 
-@vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("user:package:interest:"))
+@vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("vip:package:interest:"))
 async def handle_package_interest_confirm(callback: CallbackQuery, container):
     """
     Registra interés en paquete y muestra mensaje de confirmación con contacto directo.
@@ -193,6 +277,11 @@ async def handle_package_interest_confirm(callback: CallbackQuery, container):
         await callback.answer("⚠️ Error: servicio no disponible", show_alert=True)
         return
 
+    # VALIDACIÓN: Solo VIP/Admin puede registrar interés
+    has_access = await require_vip(callback, container, redirect=True)
+    if not has_access:
+        return
+
     try:
         # Extract package ID from callback data
         package_id_str = callback.data.split(":")[-1]
@@ -219,8 +308,8 @@ async def handle_package_interest_confirm(callback: CallbackQuery, container):
                 f"(status: {status})"
             )
 
-            # Send admin notification (reuse existing function)
-            await _send_admin_interest_notification(
+            # Send admin notification (using shared function)
+            await send_admin_interest_notification(
                 bot=callback.bot,
                 container=container,
                 user=user,
@@ -233,12 +322,14 @@ async def handle_package_interest_confirm(callback: CallbackQuery, container):
             session_ctx = container.message.get_session_context(container)
 
             # Generate confirmation message with contact button
+            # source_section="premium" ensures back button returns to premium section
             text, keyboard = container.message.user.flows.package_interest_confirmation(
                 user_name=user.first_name or "Usuario",
                 package_name=package.name,
                 user_role="VIP",
                 user_id=user.id,
-                session_history=session_ctx
+                session_history=session_ctx,
+                source_section="premium"
             )
 
             # Update message with confirmation
@@ -285,6 +376,11 @@ async def handle_vip_status(callback: CallbackQuery, container):
 
     if not container:
         await callback.answer("⚠️ Error: servicio no disponible", show_alert=True)
+        return
+
+    # VALIDACIÓN: Solo VIP/Admin puede ver estado VIP
+    has_access = await require_vip(callback, container, redirect=True)
+    if not has_access:
         return
 
     try:
@@ -393,8 +489,8 @@ async def handle_package_interest(callback: CallbackQuery, container):
                 f"(status: {status})"
             )
 
-            # Send admin notification (INTEREST-03, INTEREST-04 requirements)
-            await _send_admin_interest_notification(
+            # Send admin notification (using shared function)
+            await send_admin_interest_notification(
                 bot=callback.bot,
                 container=container,
                 user=user,
@@ -433,131 +529,6 @@ async def handle_package_interest(callback: CallbackQuery, container):
     except Exception as e:
         logger.error(f"Error registrando interés para {user.id}: {e}", exc_info=True)
         await callback.answer("⚠️ Error registrando interés", show_alert=True)
-
-
-async def _send_admin_interest_notification(
-    bot,
-    container,
-    user,
-    package,
-    interest,
-    user_role: str
-):
-    """
-    Envía notificación privada a todos los admins sobre nuevo interés.
-
-    Args:
-        bot: Instancia del bot
-        container: ServiceContainer
-        user: Usuario de Telegram (callback.from_user)
-        package: Objeto ContentPackage
-        interest: Objeto UserInterest
-        user_role: "VIP" o "Free"
-    """
-    try:
-        # Get all admin user IDs from config (environment variable)
-        admin_ids = Config.ADMIN_USER_IDS
-
-        if not admin_ids:
-            logger.warning("⚠️ No admins configured for interest notifications")
-            return
-
-        # Format user info
-        username = f"@{user.username}" if user.username else f"usuario {user.id}"
-        user_link = f"tg://user?id={user.id}"
-
-        # Format package info
-        package_type_emoji = {
-            "VIP_PREMIUM": "💎",
-            "VIP_CONTENT": "👑",
-            "FREE_CONTENT": "🌸"
-        }.get(package.category.value if hasattr(package.category, 'value') else str(package.category), "📦")
-
-        # Build notification message in Lucien's voice
-        notification_text = (
-            f"🎩 <b>Lucien:</b> <i>Nueva expresión de interés detectada...</i>\n\n"
-            f"<b>👤 Visitante:</b> {username} ({user_role})\n"
-            f"<b>📦 Tesoro de interés:</b> {package_type_emoji} {package.name}\n"
-            f"<b>📝 Descripción:</b> {package.description or 'Sin descripción'}\n"
-        )
-
-        if package.price is not None:
-            notification_text += f"<b>💰 Precio:</b> ${package.price:.2f}"
-        else:
-            notification_text += "<b>💰 Precio:</b> Gratuito"
-
-        if package.category:
-            type_text = {
-                "VIP_PREMIUM": "Premium Exclusivo",
-                "VIP_CONTENT": "Contenido VIP",
-                "FREE_CONTENT": "Contenido Gratuito"
-            }.get(package.category.value, str(package.category))
-            notification_text += f"\n<b>🏷️ Tipo:</b> {type_text}"
-
-        notification_text += (
-            f"\n\n<b>⏰ Momento:</b> {interest.created_at.strftime('%Y-%m-%d %H:%M')}\n"
-            f"<i>Diana, un miembro del círculo ha mostrado interés en uno de sus tesoros...</i>"
-        )
-
-        # Create inline keyboard with action buttons
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="📋 Ver Todos los Intereses",
-                    callback_data=f"admin:interests:list:pending"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="✅ Marcar como Atendido",
-                    callback_data=f"admin:interest:attend:{interest.id}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="💬 Mensaje al Usuario",
-                    url=user_link
-                ),
-                InlineKeyboardButton(
-                    text="🚫 Bloquear Contacto",
-                    callback_data=f"admin:user:block_contact:{user.id}"
-                )
-            ]
-        ])
-
-        # Send notification to all admins
-        sent_count = 0
-        failed_admins = []
-
-        for admin_id in admin_ids:
-            try:
-                await bot.send_message(
-                    chat_id=admin_id,
-                    text=notification_text,
-                    parse_mode="HTML",
-                    reply_markup=keyboard
-                )
-                sent_count += 1
-                logger.debug(f"📤 Interest notification sent to admin {admin_id}")
-            except Exception as e:
-                logger.error(
-                    f"❌ Failed to send interest notification to admin {admin_id}: {e}"
-                )
-                failed_admins.append(admin_id)
-
-        logger.info(
-            f"📢 Interest notification sent to {sent_count}/{len(admin_ids)} admins "
-            f"(user: {user.id}, package: {package.id}, role: {user_role})"
-        )
-
-        if failed_admins:
-            logger.warning(
-                f"⚠️ Failed to send to admins: {failed_admins} "
-                f"(may have blocked the bot or deleted chat)"
-            )
-
-    except Exception as e:
-        logger.error(f"Error sending admin interest notification: {e}", exc_info=True)
 
 
 @vip_callbacks_router.callback_query(lambda c: c.data == "menu:vip:main")
@@ -600,7 +571,8 @@ async def handle_menu_back(callback: CallbackQuery, container):
             callback.message,
             data,
             user_id=user.id,
-            user_first_name=user.first_name
+            user_first_name=user.first_name,
+            edit_mode=True
         )
         await callback.answer()
 
@@ -624,6 +596,188 @@ async def handle_menu_back(callback: CallbackQuery, container):
 #     except Exception as e:
 #         logger.error(f"Error cerrando menú para {callback.from_user.id}: {e}")
 #         await callback.answer("⚠️ Error cerrando menú", show_alert=True)
+
+
+# ===== VIP VIEWING FREE CONTENT HANDLERS =====
+# These handlers allow VIP users to browse and interact with Free content
+
+@vip_callbacks_router.callback_query(lambda c: c.data == "vip:free:packages:back")
+async def handle_vip_free_packages_back(callback: CallbackQuery, container):
+    """
+    VIP returning from Free package detail back to Free content list.
+
+    Args:
+        callback: CallbackQuery de Telegram
+        container: ServiceContainer inyectado por middleware
+    """
+    # Reuse the same handler as entering Free content
+    await handle_vip_free_content(callback, container)
+
+
+@vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("vip:free:packages:"))
+async def handle_vip_free_package_detail(callback: CallbackQuery, container):
+    """
+    Muestra vista detallada de un paquete Free a un usuario VIP.
+
+    Callback data format: "vip:free:packages:{package_id}"
+
+    Args:
+        callback: CallbackQuery de Telegram
+        container: ServiceContainer inyectado por middleware
+    """
+    user = callback.from_user
+
+    if not container:
+        await callback.answer("⚠️ Error: servicio no disponible", show_alert=True)
+        return
+
+    # VALIDACIÓN: Solo VIP/Admin puede acceder
+    has_access = await require_vip(callback, container, redirect=True)
+    if not has_access:
+        return
+
+    try:
+        # Extract package ID from callback data
+        package_id_str = callback.data.split(":")[-1]
+        package_id = int(package_id_str)
+
+        # Fetch package from ContentService
+        package = await container.content.get_package(package_id)
+
+        if not package:
+            await callback.answer("⚠️ Paquete no encontrado", show_alert=True)
+            logger.warning(f"⚠️ VIP {user.id} solicitó paquete Free inexistente: {package_id}")
+            return
+
+        # Get session context for message variations
+        session_ctx = container.message.get_session_context(container)
+
+        # Generate detail view using UserMenuMessages with VIP context
+        # Pass user_role="VIP" so the message uses VIP voice
+        # Pass source_section="free" to ensure back button returns to free content section
+        text, keyboard = container.message.user.menu.package_detail_view(
+            package=package,
+            user_role="VIP",
+            user_id=user.id,
+            session_history=session_ctx,
+            source_section="free"
+        )
+
+        # Update message with detail view
+        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboard)
+        await callback.answer()
+
+        logger.info(f"📦 VIP {user.id} viendo detalle de paquete Free: {package.name}")
+
+    except (ValueError, IndexError) as e:
+        logger.error(f"Error parsing package ID from callback {callback.data}: {e}")
+        await callback.answer("⚠️ Error: ID de paquete inválido", show_alert=True)
+    except Exception as e:
+        logger.error(f"Error mostrando detalle de paquete Free a VIP {user.id}: {e}", exc_info=True)
+        await callback.answer("⚠️ Error cargando detalles del paquete", show_alert=True)
+
+
+@vip_callbacks_router.callback_query(lambda c: c.data and c.data.startswith("vip:free:package:interest:"))
+async def handle_vip_free_package_interest(callback: CallbackQuery, container):
+    """
+    VIP registrando interés en un paquete Free.
+
+    Callback data format: "vip:free:package:interest:{package_id}"
+
+    Args:
+        callback: CallbackQuery de Telegram
+        container: ServiceContainer inyectado por middleware
+    """
+    user = callback.from_user
+
+    if not container:
+        await callback.answer("⚠️ Error: servicio no disponible", show_alert=True)
+        return
+
+    # VALIDACIÓN: Solo VIP/Admin puede registrar interés
+    has_access = await require_vip(callback, container, redirect=True)
+    if not has_access:
+        return
+
+    try:
+        # Extract package ID from callback data
+        package_id_str = callback.data.split(":")[-1]
+        package_id = int(package_id_str)
+
+        # Fetch package from ContentService
+        package = await container.content.get_package(package_id)
+
+        if not package:
+            await callback.answer("⚠️ Paquete no encontrado", show_alert=True)
+            logger.warning(f"⚠️ VIP {user.id} solicitó paquete Free inexistente: {package_id}")
+            return
+
+        # Register interest using InterestService (with deduplication)
+        success, status, interest = await container.interest.register_interest(
+            user_id=user.id,
+            package_id=package_id
+        )
+
+        if success:
+            # New interest or re-interest after debounce window
+            logger.info(
+                f"✅ VIP {user.id} ({user.first_name}) interesado en paquete Free {package_id} "
+                f"(status: {status})"
+            )
+
+            # Send admin notification
+            await _send_admin_interest_notification(
+                bot=callback.bot,
+                container=container,
+                user=user,
+                package=interest.package,
+                interest=interest,
+                user_role="VIP"
+            )
+
+            # Get session context for message variations
+            session_ctx = container.message.get_session_context(container)
+
+            # Generate confirmation message with contact button
+            # source_section="free" ensures back button returns to free content section
+            text, keyboard = container.message.user.flows.package_interest_confirmation(
+                user_name=user.first_name or "Usuario",
+                package_name=package.name,
+                user_role="VIP",
+                user_id=user.id,
+                session_history=session_ctx,
+                source_section="free"
+            )
+
+            # Update message with confirmation
+            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboard)
+            await callback.answer("✅ Interés registrado")
+
+        else:
+            # Debounce window active - no notification, no message update
+            if status == "debounce":
+                logger.debug(
+                    f"⏱️ Interés de VIP {user.id} en paquete Free {package_id} "
+                    f"ignorado (ventana de debounce activa)"
+                )
+                # Show subtle feedback (no alert, just toast)
+                await callback.answer("✅ Interés registrado previamente")
+            else:
+                # Error occurred
+                logger.error(
+                    f"❌ Error registrando interés para VIP {user.id}: {status}"
+                )
+                await callback.answer(
+                    "⚠️ Error registrando interés",
+                    show_alert=True
+                )
+
+    except (ValueError, IndexError) as e:
+        logger.error(f"Error parsing package ID from callback {callback.data}: {e}")
+        await callback.answer("⚠️ Error: ID de paquete inválido", show_alert=True)
+    except Exception as e:
+        logger.error(f"Error registrando interés para VIP {user.id}: {e}", exc_info=True)
+        await callback.answer("⚠️ Error registrando interés", show_alert=True)
 
 
 __all__ = ["vip_callbacks_router"]

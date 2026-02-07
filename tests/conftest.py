@@ -11,6 +11,19 @@ Provides common fixtures for all tests:
 - container_with_preload: Container with services preloaded
 - Semantic assertion fixtures for voice validation
 """
+import os
+import sys
+
+# CRITICAL: Set testing environment BEFORE any bot imports
+# This ensures all tests use in-memory database, never bot.db
+os.environ["TESTING"] = "true"
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+
+# Verify we're not using the production database
+if "bot.db" in os.environ.get("DATABASE_URL", "").lower():
+    print("FATAL: Tests cannot use bot.db database!")
+    sys.exit(1)
+
 import pytest
 import asyncio
 

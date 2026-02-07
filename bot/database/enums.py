@@ -56,9 +56,9 @@ class ContentCategory(str, Enum):
     Categorías de contenido para paquetes.
 
     Categorías:
-        FREE_CONTENT: Contenido gratuito (acceso para todos)
-        VIP_CONTENT: Contenido VIP (requiere suscripción activa)
-        VIP_PREMIUM: Contenido premium VIP (contenido exclusivo de alto valor)
+        FREE_CONTENT: Promos (promociones para usuarios)
+        VIP_CONTENT: El Diván (contenido para suscriptores VIP)
+        VIP_PREMIUM: Premium (contenido exclusivo de alto valor)
     """
 
     FREE_CONTENT = "FREE_CONTENT"
@@ -73,9 +73,9 @@ class ContentCategory(str, Enum):
     def display_name(self) -> str:
         """Retorna nombre legible de la categoría."""
         names = {
-            ContentCategory.FREE_CONTENT: "Contenido Gratuito",
-            ContentCategory.VIP_CONTENT: "Contenido VIP",
-            ContentCategory.VIP_PREMIUM: "VIP Premium"
+            ContentCategory.FREE_CONTENT: "Promos",
+            ContentCategory.VIP_CONTENT: "El Diván",
+            ContentCategory.VIP_PREMIUM: "Premium"
         }
         return names[self]
 
@@ -83,8 +83,8 @@ class ContentCategory(str, Enum):
     def emoji(self) -> str:
         """Retorna emoji de la categoría."""
         emojis = {
-            ContentCategory.FREE_CONTENT: "🆓",
-            ContentCategory.VIP_CONTENT: "⭐",
+            ContentCategory.FREE_CONTENT: "🌸",
+            ContentCategory.VIP_CONTENT: "🛋️",
             ContentCategory.VIP_PREMIUM: "💎"
         }
         return emojis[self]
