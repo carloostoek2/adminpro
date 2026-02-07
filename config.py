@@ -110,8 +110,10 @@ class Config:
     )
 
     # Intervalo de procesamiento de cola Free (minutos)
+    # NOTA: Debe ser menor que el tiempo de expiración de ChatJoinRequest (~5 min)
+    # y menor que DEFAULT_WAIT_TIME para aprobar inmediatamente al cumplirse el tiempo
     PROCESS_FREE_QUEUE_MINUTES: int = int(
-        os.getenv("PROCESS_FREE_QUEUE_MINUTES", "5")
+        os.getenv("PROCESS_FREE_QUEUE_MINUTES", "1")
     )
 
     # ===== FREE CHANNEL SETTINGS =====
