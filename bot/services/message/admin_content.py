@@ -5,10 +5,10 @@ Provides messages for content package management UI with Lucien's voice.
 All messages maintain Lucien's sophisticated mayordomo voice from docs/guia-estilo.md.
 """
 from typing import Tuple, Optional, Any
-from datetime import datetime
 
 from aiogram.types import InlineKeyboardMarkup
 
+from bot.database.enums import ContentCategory
 from bot.services.message.base import BaseMessageProvider
 from bot.utils.keyboards import create_inline_keyboard
 
@@ -147,17 +147,14 @@ class AdminContentMessages(BaseMessageProvider):
             >>> 'Test Pack' in summary
             True
         """
-        # Get category info
-        category_emoji = "🌸"
-        category_name = "Promos"
+        # Get category info using enum properties directly
         if package.category:
-            category_str = str(package.category)
-            if "vip" in category_str and "premium" in category_str:
-                category_emoji = "💎"
-                category_name = "Premium"
-            elif "vip" in category_str:
-                category_emoji = "🛋️"
-                category_name = "El Diván"
+            category_emoji = package.category.emoji
+            category_name = package.category.display_name
+        else:
+            # Fallback for packages without a category
+            category_emoji = "📦"
+            category_name = "Sin categoría"
 
         # Status indicator
         status_emoji = "✅" if package.is_active else "🚫"
@@ -216,20 +213,14 @@ class AdminContentMessages(BaseMessageProvider):
             >>> 'Test Pack' in text
             True
         """
-        # Get category info
-        category_emoji = "🌸"
-        category_name = "Promos"
+        # Get category info using enum properties directly
         if package.category:
-            category_str = str(package.category)
-            if "vip_premium" in category_str:
-                category_emoji = "💎"
-                category_name = "Premium"
-            elif "vip_content" in category_str:
-                category_emoji = "🛋️"
-                category_name = "El Diván"
-            elif "free_content" in category_str:
-                category_emoji = "🌸"
-                category_name = "Promos"
+            category_emoji = package.category.emoji
+            category_name = package.category.display_name
+        else:
+            # Fallback for packages without a category
+            category_emoji = "📦"
+            category_name = "Sin categoría"
 
         # Status indicator
         status_emoji = "✅" if package.is_active else "🚫"

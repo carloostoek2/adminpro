@@ -16,7 +16,7 @@ from bot.services.container import ServiceContainer
 from bot.states.admin import ContentPackageStates
 from bot.utils.pagination import Paginator, create_pagination_keyboard
 from bot.utils.keyboards import create_inline_keyboard
-from typing import List
+from typing import List, Optional
 from aiogram.types import InlineKeyboardMarkup
 
 logger = logging.getLogger(__name__)
@@ -31,25 +31,19 @@ content_router.message.middleware(DatabaseMiddleware())
 
 # ===== HELPER FUNCTIONS =====
 
-def _get_category_emoji(category) -> str:
+def _get_category_emoji(category: Optional[ContentCategory]) -> str:
     """Get emoji for content category.
 
     Args:
-        category: ContentCategory enum or string representation
+        category: ContentCategory enum or None
 
     Returns:
         Emoji string for the category
     """
-    if not category:
-        return "🆓"
-
-    category_str = str(category).lower()
-    if "vip_premium" in category_str:
-        return "💎"
-    elif "vip" in category_str:
-        return "⭐"
-    else:
-        return "🆓"
+    if category:
+        return category.emoji
+    # Default to FREE_CONTENT emoji if category is not set
+    return ContentCategory.FREE_CONTENT.emoji
 
 
 def _create_package_list_keyboard(

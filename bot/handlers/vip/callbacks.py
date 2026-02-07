@@ -13,16 +13,13 @@ Responsabilidades:
 Pattern: Sigue estructura de admin callbacks con router separado.
 """
 import logging
-from datetime import datetime
-from typing import Dict, Any
 
 from aiogram import Router
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import CallbackQuery
 
 from bot.database.enums import ContentCategory, UserRole
-from bot.handlers.utils.role_check import require_vip, get_user_role_from_container
+from bot.handlers.utils import send_admin_interest_notification, require_vip
 from bot.middlewares import DatabaseMiddleware
-from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -311,8 +308,8 @@ async def handle_package_interest_confirm(callback: CallbackQuery, container):
                 f"(status: {status})"
             )
 
-            # Send admin notification (reuse existing function)
-            await _send_admin_interest_notification(
+            # Send admin notification (using shared function)
+            await send_admin_interest_notification(
                 bot=callback.bot,
                 container=container,
                 user=user,
@@ -492,8 +489,8 @@ async def handle_package_interest(callback: CallbackQuery, container):
                 f"(status: {status})"
             )
 
-            # Send admin notification (INTEREST-03, INTEREST-04 requirements)
-            await _send_admin_interest_notification(
+            # Send admin notification (using shared function)
+            await send_admin_interest_notification(
                 bot=callback.bot,
                 container=container,
                 user=user,
@@ -532,131 +529,6 @@ async def handle_package_interest(callback: CallbackQuery, container):
     except Exception as e:
         logger.error(f"Error registrando interés para {user.id}: {e}", exc_info=True)
         await callback.answer("⚠️ Error registrando interés", show_alert=True)
-
-
-async def _send_admin_interest_notification(
-    bot,
-    container,
-    user,
-    package,
-    interest,
-    user_role: str
-):
-    """
-    Envía notificación privada a todos los admins sobre nuevo interés.
-
-    Args:
-        bot: Instancia del bot
-        container: ServiceContainer
-        user: Usuario de Telegram (callback.from_user)
-        package: Objeto ContentPackage
-        interest: Objeto UserInterest
-        user_role: "VIP" o "Free"
-    """
-    try:
-        # Get all admin user IDs from config (environment variable)
-        admin_ids = Config.ADMIN_USER_IDS
-
-        if not admin_ids:
-            logger.warning("⚠️ No admins configured for interest notifications")
-            return
-
-        # Format user info
-        username = f"@{user.username}" if user.username else f"usuario {user.id}"
-        user_link = f"tg://user?id={user.id}"
-
-        # Format package info
-        package_type_emoji = {
-            "VIP_PREMIUM": "💎",
-            "VIP_CONTENT": "👑",
-            "FREE_CONTENT": "🌸"
-        }.get(package.category.value if hasattr(package.category, 'value') else str(package.category), "📦")
-
-        # Build notification message in Lucien's voice
-        notification_text = (
-            f"🎩 <b>Lucien:</b> <i>Nueva expresión de interés detectada...</i>\n\n"
-            f"<b>👤 Visitante:</b> {username} ({user_role})\n"
-            f"<b>📦 Tesoro de interés:</b> {package_type_emoji} {package.name}\n"
-            f"<b>📝 Descripción:</b> {package.description or 'Sin descripción'}\n"
-        )
-
-        if package.price is not None:
-            notification_text += f"<b>💰 Precio:</b> ${package.price:.2f}"
-        else:
-            notification_text += "<b>💰 Precio:</b> Acceso promocional"
-
-        if package.category:
-            type_text = {
-                "VIP_PREMIUM": "Premium",
-                "VIP_CONTENT": "El Diván",
-                "FREE_CONTENT": "Promos"
-            }.get(package.category.value, str(package.category))
-            notification_text += f"\n<b>🏷️ Tipo:</b> {type_text}"
-
-        notification_text += (
-            f"\n\n<b>⏰ Momento:</b> {interest.created_at.strftime('%Y-%m-%d %H:%M')}\n"
-            f"<i>Diana, un miembro del círculo ha mostrado interés en uno de sus tesoros...</i>"
-        )
-
-        # Create inline keyboard with action buttons
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="📋 Ver Todos los Intereses",
-                    callback_data=f"admin:interests:list:pending"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="✅ Marcar como Atendido",
-                    callback_data=f"admin:interest:attend:{interest.id}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="💬 Mensaje al Usuario",
-                    url=user_link
-                ),
-                InlineKeyboardButton(
-                    text="🚫 Bloquear Contacto",
-                    callback_data=f"admin:user:block_contact:{user.id}"
-                )
-            ]
-        ])
-
-        # Send notification to all admins
-        sent_count = 0
-        failed_admins = []
-
-        for admin_id in admin_ids:
-            try:
-                await bot.send_message(
-                    chat_id=admin_id,
-                    text=notification_text,
-                    parse_mode="HTML",
-                    reply_markup=keyboard
-                )
-                sent_count += 1
-                logger.debug(f"📤 Interest notification sent to admin {admin_id}")
-            except Exception as e:
-                logger.error(
-                    f"❌ Failed to send interest notification to admin {admin_id}: {e}"
-                )
-                failed_admins.append(admin_id)
-
-        logger.info(
-            f"📢 Interest notification sent to {sent_count}/{len(admin_ids)} admins "
-            f"(user: {user.id}, package: {package.id}, role: {user_role})"
-        )
-
-        if failed_admins:
-            logger.warning(
-                f"⚠️ Failed to send to admins: {failed_admins} "
-                f"(may have blocked the bot or deleted chat)"
-            )
-
-    except Exception as e:
-        logger.error(f"Error sending admin interest notification: {e}", exc_info=True)
 
 
 @vip_callbacks_router.callback_query(lambda c: c.data == "menu:vip:main")
