@@ -801,26 +801,56 @@ class SubscriptionService:
                 await self.session.flush()
                 logger.debug(f"📝 Datos de usuario actualizados: {user_id}")
 
-        # ===== CONTINUAR CON LÓGICA EXISTENTE =====
-        # Verificar si ya tiene solicitud pendiente RECIENTE (últimos 5 minutos)
-        # Esto previene spam pero permite reintentos después de salir del canal
-        recent_cutoff = datetime.utcnow() - timedelta(minutes=Config.FREE_REQUEST_SPAM_WINDOW_MINUTES)
-
+        # ===== BUSCAR SOLICITUD EXISTENTE =====
+        # Buscar CUALQUIER solicitud pendiente del usuario (no solo recientes)
         result = await self.session.execute(
             select(FreeChannelRequest).where(
                 FreeChannelRequest.user_id == user_id,
-                FreeChannelRequest.processed == False,
-                FreeChannelRequest.request_date >= recent_cutoff
+                FreeChannelRequest.processed == False
             ).order_by(FreeChannelRequest.request_date.desc())
         )
         existing = result.scalar_one_or_none()
 
         if existing:
-            logger.info(
-                f"ℹ️ Usuario {user_id} ya tiene solicitud Free reciente "
-                f"(hace {existing.minutes_since_request()} min)"
-            )
-            return False, "Ya existe solicitud pendiente", existing
+            # Verificar si la solicitud ya cumplió el tiempo de espera
+            wait_time = Config.DEFAULT_WAIT_TIME_MINUTES
+            minutes_since = existing.minutes_since_request()
+
+            if minutes_since >= wait_time:
+                # La solicitud ya cumplió el tiempo pero no fue procesada
+                # (probablemente la ChatJoinRequest de Telegram expiró)
+                # Eliminarla y crear una nueva para que el usuario pueda reintentar
+                logger.info(
+                    f"🔄 Solicitud Free de user {user_id} ya cumplió tiempo "
+                    f"({minutes_since} min >= {wait_time} min) pero no fue aprobada. "
+                    f"Creando nueva solicitud..."
+                )
+                await self.session.delete(existing)
+                await self.session.commit()
+                # Continuar con la creación de nueva solicitud abajo
+            else:
+                # Solicitud aún dentro del tiempo de espera - verificar anti-spam
+                spam_cutoff = datetime.utcnow() - timedelta(minutes=Config.FREE_REQUEST_SPAM_WINDOW_MINUTES)
+
+                if existing.request_date >= spam_cutoff:
+                    # Solicitud muy reciente - rechazar duplicado
+                    logger.info(
+                        f"ℹ️ Usuario {user_id} ya tiene solicitud Free reciente "
+                        f"(hace {minutes_since} min, quedan {wait_time - minutes_since} min)"
+                    )
+                    return False, "Ya existe solicitud pendiente", existing
+                else:
+                    # Solicitud antigua pero aún no cumple tiempo de espera
+                    # Actualizar el request_date para "reanimar" la solicitud
+                    # (el usuario reactivó su solicitud antes de que expirara)
+                    existing.request_date = datetime.utcnow()
+                    await self.session.commit()
+                    await self.session.refresh(existing)
+                    logger.info(
+                        f"🔄 Solicitud Free reactivada para user {user_id} "
+                        f"(tiempo reseteado, protegida de expiración)"
+                    )
+                    return False, "Solicitud reactivada", existing
 
         # ESTRATEGIA DE LIMPIEZA: Eliminar TODAS las solicitudes antiguas del usuario
         #
@@ -1074,9 +1104,27 @@ class SubscriptionService:
 
             except Exception as e:
                 error_count += 1
-                logger.error(
-                    f"❌ Error aprobando solicitud de user {request.user_id}: {e}"
+                error_msg = str(e).lower()
+
+                # Verificar si es un error de solicitud expirada/cancelada
+                # Esto ocurre cuando el ChatJoinRequest de Telegram expiró o fue cancelado
+                is_expired_error = any(
+                    keyword in error_msg
+                    for keyword in ["expired", "not found", "no pending", "request expired", "user_not_participant"]
                 )
+
+                if is_expired_error:
+                    # Marcar como procesada para no volver a intentar
+                    request.processed = True
+                    request.processed_at = datetime.utcnow()
+                    logger.warning(
+                        f"⚠️ Solicitud de user {request.user_id} expiró o fue cancelada. "
+                        f"Marcada como procesada para evitar reintentos."
+                    )
+                else:
+                    logger.error(
+                        f"❌ Error aprobando solicitud de user {request.user_id}: {e}"
+                    )
 
         # Commit todos los cambios
         await self.session.commit()
