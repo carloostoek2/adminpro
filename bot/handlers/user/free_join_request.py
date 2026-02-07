@@ -90,13 +90,11 @@ async def handle_free_join_request(
 
     if not success:
         # ===== SOLICITUD DUPLICADA =====
-        logger.info(f"⚠️ Solicitud duplicada detectada: user {user_id}")
+        logger.info(f"🔄 Solicitud duplicada manejada: user {user_id} - {message}")
 
-        # Declinar (usuario ya tiene solicitud pendiente)
-        try:
-            await join_request.decline()
-        except Exception as e:
-            logger.error(f"❌ Error declinando solicitud duplicada: {e}")
+        # La solicitud existente fue actualizada (tiempo mantenido o reseteado)
+        # NO declinar la solicitud de Telegram - será procesada por el background task
+        # Cuando se reactiva una solicitud, el tiempo se resetea para protegerla
 
         # Notificar tiempo restante con voz de Lucien
         if request:
